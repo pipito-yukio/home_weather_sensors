@@ -1,0 +1,44 @@
+2021-10-05 16:46:59 DEBUG __init__.py(26)[<module>] app.secret_key: b'\x10\xe9\xda@;\x05M7\xa5>hO\xbab\x06\xa4'
+2021-10-05 16:46:59 DEBUG __init__.py(27)[<module>] <Config {'ENV': 'production', 'DEBUG': False, 'TESTING': False, 'PROPAGATE_EXCEPTIONS': None, 'PRESERVE_CONTEXT_ON_EXCEPTION': None, 'SECRET_KEY': b'\x10\xe9\xda@;\x05M7\xa5>hO\xbab\x06\xa4', 'PERMANENT_SESSION_LIFETIME': datetime.timedelta(days=31), 'USE_X_SENDFILE': False, 'SERVER_NAME': 'dell-t7500.local:5000', 'APPLICATION_ROOT': '/weather_finder', 'SESSION_COOKIE_NAME': 'session', 'SESSION_COOKIE_DOMAIN': None, 'SESSION_COOKIE_PATH': None, 'SESSION_COOKIE_HTTPONLY': True, 'SESSION_COOKIE_SECURE': False, 'SESSION_COOKIE_SAMESITE': None, 'SESSION_REFRESH_EACH_REQUEST': True, 'MAX_CONTENT_LENGTH': None, 'SEND_FILE_MAX_AGE_DEFAULT': None, 'TRAP_BAD_REQUEST_ERRORS': None, 'TRAP_HTTP_EXCEPTIONS': False, 'EXPLAIN_TEMPLATE_LOADING': False, 'PREFERRED_URL_SCHEME': 'http', 'JSON_AS_ASCII': False, 'JSON_SORT_KEYS': True, 'JSONIFY_PRETTYPRINT_REGULAR': False, 'JSONIFY_MIMETYPE': 'application/json', 'TEMPLATES_AUTO_RELOAD': None, 'MAX_COOKIE_SIZE': 4093, 'INVALID_DATEFORMAT': '日付形式不正', 'INVALID_DEVICE_NAME': 'デバイス名は必須項目です', 'MSG_DOWNLOAD_LIMIT_COUNT': '１０，０００', 'MSG_INIT_REC_COUNT': '----(件)'}>
+2021-10-05 16:46:59 INFO run.py(14)[<module>] run.py in host: dell-t7500.local, port: 5000
+2021-10-05 16:46:59 INFO run.py(28)[<module>] Development start, with debug.
+2021-10-05 16:46:59 DEBUG __init__.py(26)[<module>] app.secret_key: b'`\xd6C\x19\xd8\x15L\x17\xa2\xb6\xa7\x8b\xcd8_\x18'
+2021-10-05 16:46:59 DEBUG __init__.py(27)[<module>] <Config {'ENV': 'production', 'DEBUG': False, 'TESTING': False, 'PROPAGATE_EXCEPTIONS': None, 'PRESERVE_CONTEXT_ON_EXCEPTION': None, 'SECRET_KEY': b'`\xd6C\x19\xd8\x15L\x17\xa2\xb6\xa7\x8b\xcd8_\x18', 'PERMANENT_SESSION_LIFETIME': datetime.timedelta(days=31), 'USE_X_SENDFILE': False, 'SERVER_NAME': 'dell-t7500.local:5000', 'APPLICATION_ROOT': '/weather_finder', 'SESSION_COOKIE_NAME': 'session', 'SESSION_COOKIE_DOMAIN': None, 'SESSION_COOKIE_PATH': None, 'SESSION_COOKIE_HTTPONLY': True, 'SESSION_COOKIE_SECURE': False, 'SESSION_COOKIE_SAMESITE': None, 'SESSION_REFRESH_EACH_REQUEST': True, 'MAX_CONTENT_LENGTH': None, 'SEND_FILE_MAX_AGE_DEFAULT': None, 'TRAP_BAD_REQUEST_ERRORS': None, 'TRAP_HTTP_EXCEPTIONS': False, 'EXPLAIN_TEMPLATE_LOADING': False, 'PREFERRED_URL_SCHEME': 'http', 'JSON_AS_ASCII': False, 'JSON_SORT_KEYS': True, 'JSONIFY_PRETTYPRINT_REGULAR': False, 'JSONIFY_MIMETYPE': 'application/json', 'TEMPLATES_AUTO_RELOAD': None, 'MAX_COOKIE_SIZE': 4093, 'INVALID_DATEFORMAT': '日付形式不正', 'INVALID_DEVICE_NAME': 'デバイス名は必須項目です', 'MSG_DOWNLOAD_LIMIT_COUNT': '１０，０００', 'MSG_INIT_REC_COUNT': '----(件)'}>
+2021-10-05 16:46:59 INFO run.py(14)[<module>] run.py in host: dell-t7500.local, port: 5000
+2021-10-05 16:46:59 INFO run.py(28)[<module>] Development start, with debug.
+2021-10-05 16:47:35 DEBUG app_main.py(113)[checkRecCount] query string: b'deviceName=esp8266_1&dateFrom=2021-10-01&dateTo=2021-10-03'
+2021-10-05 16:47:35 DEBUG app_main.py(114)[checkRecCount] deviceName: esp8266_1
+2021-10-05 16:47:35 DEBUG app_main.py(115)[checkRecCount] dateFrom: 2021-10-01
+2021-10-05 16:47:35 DEBUG app_main.py(116)[checkRecCount] dateTo: 2021-10-03
+2021-10-05 16:47:35 DEBUG weatherdb.py(106)[find_device] esp8266_1: (1,)
+2021-10-05 16:47:35 DEBUG weatherdb.py(349)[_build_query] 
+    SELECT did, datetime(measurement_time, 'unixepoch', 'localtime'), temp_out, temp_in, humid, pressure
+    FROM t_weather WHERE did=? 
+    AND (measurement_time >= strftime('%s', ?) AND measurement_time < strftime('%s', ?)) ORDER BY did, measurement_time
+2021-10-05 16:47:35 INFO weatherdb.py(374)[get_count] Record count: 353
+2021-10-05 16:47:41 INFO app_main.py(51)[download_csv] downloadWeather
+2021-10-05 16:47:41 DEBUG app_main.py(60)[download_csv] deviceName: esp8266_1
+2021-10-05 16:47:41 DEBUG app_main.py(61)[download_csv] dateFrom: 2021-10-01
+2021-10-05 16:47:41 DEBUG app_main.py(62)[download_csv] dateTo: 2021-10-03
+2021-10-05 16:47:41 DEBUG app_main.py(63)[download_csv] weatherHeader: ['withHeader']
+2021-10-05 16:47:41 DEBUG app_main.py(64)[download_csv] withHeader: True
+2021-10-05 16:47:41 DEBUG weatherdb.py(349)[_build_query] 
+    SELECT did, datetime(measurement_time, 'unixepoch', 'localtime'), temp_out, temp_in, humid, pressure
+    FROM t_weather WHERE did=? 
+    AND (measurement_time >= strftime('%s', ?) AND measurement_time < strftime('%s', ?)) ORDER BY did, measurement_time
+2021-10-05 16:47:41 INFO weatherdb.py(404)[find] Record count: 353
+2021-10-05 16:47:41 INFO weatherdb.py(413)[find] Return CSV list
+2021-10-05 16:47:41 DEBUG app_main.py(160)[_download_weather] <Response streamed [200 OK]>
+2021-10-05 16:48:06 INFO app_main.py(92)[download_csv] downloadDevice
+2021-10-05 16:48:06 DEBUG app_main.py(176)[_download_devicd] <Response streamed [200 OK]>
+2021-10-05 16:48:17 DEBUG app_main.py(113)[checkRecCount] query string: b'deviceName=&dateFrom=2021-10-01&dateTo=2021-10-03'
+2021-10-05 16:48:17 DEBUG app_main.py(114)[checkRecCount] deviceName: 
+2021-10-05 16:48:17 DEBUG app_main.py(115)[checkRecCount] dateFrom: 2021-10-01
+2021-10-05 16:48:17 DEBUG app_main.py(116)[checkRecCount] dateTo: 2021-10-03
+2021-10-05 16:48:17 DEBUG app_main.py(121)[checkRecCount] error_dict: {'filedName': '', 'errorMessage': 'デバイス名は必須項目です', 'fieldName': 'error_deviceName'}
+2021-10-05 16:48:36 INFO app_main.py(51)[download_csv] downloadWeather
+2021-10-05 16:48:36 DEBUG app_main.py(60)[download_csv] deviceName: esp8266_1
+2021-10-05 16:48:36 DEBUG app_main.py(61)[download_csv] dateFrom: 2021-10-
+2021-10-05 16:48:36 DEBUG app_main.py(62)[download_csv] dateTo: 2021-10-03
+2021-10-05 16:48:36 DEBUG app_main.py(63)[download_csv] weatherHeader: ['withHeader']
+2021-10-05 16:48:36 DEBUG app_main.py(64)[download_csv] withHeader: True

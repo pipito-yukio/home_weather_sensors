@@ -1,0 +1,10 @@
+[Unit]
+Description=Raspberry Pi poweroff service
+
+[Service]
+Type=simple
+ExecStart=/home/pi/bin/switch_to_poweroff.sh $POWEROFF_PIN $LEDBLINK_PIN
+EnvironmentFile=/etc/default/switch-to-poweroff
+
+[Install]
+WantedBy=multi-user.target

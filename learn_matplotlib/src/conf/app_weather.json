@@ -1,0 +1,16 @@
+{
+  "geometory": "980x800",
+  "saveas": {
+    "initialdir": "./images"
+  },
+  "openfiles": {
+    "initialdir": "~/Downloads/csv"
+  },
+  "plot": {
+    "figsize": [7, 7],
+    "ylim": {
+       "temp": [-20, 40],
+       "pressure": [940, 1040]
+    }
+  }
+}

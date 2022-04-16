@@ -1,0 +1,10 @@
+# weather DB path
+export PATH_WEATHER_DB=${HOME}/db/weather.db
+export PATH_LOGGER_CONF=${HOME}/bin/pigpio/conf
+# path webapp
+export PATH_WEBAPP=${HOME}/webapp
+export PATH_WEBAPP_LOGS=${PATH_WEBAPP}/logs
+# GMail info
+export GMAIL_USER=[your address]@gmail.com
+# Google Application password for 2 factor authenticate
+export GMAIL_PASSWD=[your password for develop pc]

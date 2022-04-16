@@ -1,0 +1,4 @@
+PATH_WEATHER_DB=/home/pi/db/weather.db
+UDP_PORT=2222
+BRIGHTNESS_PIN=17
+

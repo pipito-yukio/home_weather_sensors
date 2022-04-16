@@ -1,0 +1,12 @@
+[Unit]
+Description=Flask webapp WeatherFinder service
+After=network-online.target
+
+[Service]
+Type=idle
+ExecStart=/home/pi/webapp/start.sh prod >/dev/null
+User=pi
+
+[Install]
+WantedBy=multi-user.target
+

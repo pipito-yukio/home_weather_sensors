@@ -1,0 +1,12 @@
+{
+  "monitor": {
+    "recv_timeout_seconds": 720
+  },
+  "Melody": {
+    "enable": false,
+    "gpio_pin": 23,
+    "play_time": 30,
+    "pose_time": 30,
+    "play_repeat": 2
+  }
+}

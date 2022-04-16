@@ -1,0 +1,58 @@
+├── bin
+│   ├── pigpio
+│   │   ├── GetCSVFromWeather.py
+│   │   ├── SerialMonitor.py
+│   │   ├── SwitchToPoweroff.py
+│   │   ├── UDPClientFromWeatherSensor.py
+│   │   ├── conf
+│   │   │   ├── conf_udpmon.json
+│   │   │   ├── logconf_service_poweroff.json
+│   │   │   └── logconf_service_weather.json
+│   │   ├── db
+│   │   │   ├── __init__.py
+│   │   │   ├── sqlite3conv.py
+│   │   │   ├── sqlite3db.py
+│   │   │   └── weatherdb.py
+│   │   ├── lib
+│   │   │   ├── __init__.py
+│   │   │   ├── analogtempsensors.py
+│   │   │   ├── ht16k33.py
+│   │   │   ├── led4digit7seg.py
+│   │   │   ├── mcp3000.py
+│   │   │   └── mcp3000base.py
+│   │   ├── log
+│   │   │   ├── __init__.py
+│   │   │   └── logsetting.py
+│   │   ├── mail
+│   │   │   ├── __init__.py
+│   │   │   └── gmail_sender.py
+│   │   └── util
+│   │       ├── __init__.py
+│   │       └── file_util.py
+│   ├── getcsv_from_weather.sh
+│   ├── serial_mon.sh
+│   ├── switch_to_poweroff.sh
+│   └── udpclient_from_weather_sensor.sh
+├── db
+│   └── weather_db.sql
+├── inst_main.sh
+├── logs
+│   └── pigpio
+└── work
+    ├── add_env_in_bashrc.txt
+    ├── docs
+    │   ├── project_pigpio_tree.txt
+    │   └── project_webapp_tree.txt
+    ├── etc
+    │   ├── default
+    │   │   ├── switch-to-poweroff
+    │   │   └── udp-weather-mon
+    │   └── systemd
+    │       └── system
+    │           ├── switch-to-poweroff.service
+    │           ├── udp-weather-mon.service
+    │           └── webapp-weather-finder.service
+    └── py_venv
+        ├── requirements_pigpio.txt
+        └── requirements_webapp.txt
+
