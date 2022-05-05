@@ -16,7 +16,6 @@ weather_db = os.environ.get("PATH_WEATHER_DB", my_home + "/db/weather.db")
 
 # SQLite3 is 'RETURNING id' not available
 INSERT_DEVICE = "INSERT INTO t_device(name) VALUES (?)"
-ALL_DEVICES = "SELECT id, name FROM t_device ORDER BY id"
 FIND_DEVICE = "SELECT id FROM t_device WHERE name = ?"
 
 INSERT_WEATHER = """
@@ -44,7 +43,7 @@ def set_dbpath(dbpath):
     weather_db = dbpath
 
 
-def get_did(conn, device_name, add_device=True, logger=None):
+def get_did(conn, device_name, logger=None):
     """
     Get the device ID corresponding to the device name.
     1. if exist in cache, return from cache.
@@ -52,43 +51,23 @@ def get_did(conn, device_name, add_device=True, logger=None):
     3. if not exist in t_device, insert into t_device and return did
     :param conn: Weather Weather database connection
     :param device_name: Device name
-    :param add_device: flag into t_device, if True then insert into t_device and cache
     :param logger: application logger or None
     :return: did
     """
-    try:
-        did = cache_did_map[device_name]
-    except KeyError:
-        did = None
-
+    did = cache_did_map.get(device_name)
+    if logger is not None:
+        logger.debug("device_name: {} -> cache_did_map in did: {}".format(device_name, did))
     if did is not None:
         return did
 
-    did = find_device(conn, device_name, logger)
+    did = find_device(conn, device_name, logger=logger)
     if did is not None:
         cache_did_map[device_name] = did
         return did
 
-    if not add_device:
-        return None
-
-    did = add_device(conn, device_name, logger)
+    did = add_device(conn, device_name, logger=logger)
     cache_did_map[device_name] = did
     return did
-
-
-def all_devices(logger=None):
-    """
-    All record name-ID dict in t_device
-    :param logger: application logger or None
-    :return: Dict {device name: id}, if not record then blank dict
-    """
-    devices = {}
-    conn = get_connection(weather_db, read_only=True, logger=logger)
-    for device in conn.execute(ALL_DEVICES):
-        devices[device[1]] = device[0] # {key: name, value: id}
-    conn.close()
-    return devices
 
 
 def find_device(conn, device_name, logger=None):
@@ -120,13 +99,11 @@ def add_device(conn, device_name, logger=None):
     try:
         with conn:
             conn.execute(INSERT_DEVICE, (device_name,))
-            if logger is not None:
-                logger.debug("ADD_DEVICE")
             # SQLite3 not returning id
             # did = cur.fetchone()[0]
         did = find_device(conn, device_name, logger)
         if logger is not None:
-            logger.debug("id: {}, name: {}".format(did, device_name))
+            logger.debug("did: {}, device_name: {}".format(did, device_name))
     except sqlite3.Error as err:
         if logger is not None:
             logger.warning("error device_name:{}, {}".format(device_name, err))
@@ -359,7 +336,7 @@ class WeatherFinder:
          """
         if self.conn is None:
             self.conn = get_connection(weather_db, read_only=True, logger=self.logger)
-        did = get_did(self.conn, device_name, add_device=False, logger=self.logger)
+        did = get_did(self.conn, device_name, logger=self.logger)
         if did is None:
             return 0
 
@@ -389,7 +366,7 @@ class WeatherFinder:
         """
         if self.conn is None:
             self.conn = get_connection(weather_db, read_only=True, logger=self.logger)
-        did = get_did(self.conn, device_name, add_device=False, logger=self.logger)
+        did = get_did(self.conn, device_name, logger=self.logger)
         if did is None:
             return []
 

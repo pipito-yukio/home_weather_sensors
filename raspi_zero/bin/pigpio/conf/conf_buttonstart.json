@@ -1,0 +1,11 @@
+{
+  "actions": [
+    "restartUdpmon"
+  ],
+  "restartUdpmon": {
+    "PIN": 24,
+    "PUD_down": true,
+    "enable": true,
+    "script": "/home/pi/bin/restart_udpmon.sh"
+  }
+}

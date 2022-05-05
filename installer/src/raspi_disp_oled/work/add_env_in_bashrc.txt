@@ -1,0 +1,2 @@
+# for GetWeatherForecast.py
+export PATH_DATAS=$HOME/datas
