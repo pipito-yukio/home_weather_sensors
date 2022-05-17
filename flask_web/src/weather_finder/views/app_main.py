@@ -93,7 +93,7 @@ def download_csv():
         wf = None
         try:
             conn = get_dbconn()
-            return _download_devicd(conn)
+            return _download_device(conn)
         except Exception as exp:
             app_logger.error(exp)
             return abort(501)
@@ -161,7 +161,7 @@ def _download_weather(conn, device_name, date_from=None, date_to=None, with_head
     return res
 
 
-def _download_devicd(conn):
+def _download_device(conn):
     wf = WeatherFinder(conn=conn, logger=app_logger)
     csv_lines = wf.get_devices()
     output = io.StringIO()
