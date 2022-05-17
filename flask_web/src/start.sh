@@ -21,7 +21,14 @@ export IP_HOST="${host_name}.local"
 export ENV=$env_mode
 echo "$IP_HOST with $ENV"
 
-. ${HOME}/py_venv/py37_webapp/bin/activate
-python ${HOME}/webapp/run.py
+EXEC_PATH=
+if [ -n "$PATH_WEBAPP" ]; then
+   EXEC_PATH=$PATH_WEBAPP
+else
+   EXEC_PATH=$HOME/webapp
+fi
+
+. $HOME/py_venv/py37_webapp/bin/activate
+python $EXEC_PATH/run.py
 
 deactivate
