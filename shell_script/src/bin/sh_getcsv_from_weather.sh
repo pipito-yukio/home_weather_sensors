@@ -4,6 +4,7 @@ readonly SCRIPT_NAME=${0##*/}
 
 PATH_EXPORT_CSV="$HOME/Downloads/csv"
 PREFIX_CSV_NAME="weather_"
+DEVICE_CSV_NAME="device.csv"
 
 print_help()
 {
@@ -14,17 +15,22 @@ Execute GetCSVFromWeather.py OPTIONS
 --device-name: ESP module device name is Required.
 --from-date: SQL Criteria Start date in t_weahter is optional.
 --to-date: SQL Criteria End date in t_weahter is optional.
+--output-device-csv: Output device.csv in t_device is optional.
 --help	display this help and exit
 
 Example:
+1.Output weather csv
   $SCRIPT_NAME --device-name esp8266_1 --device espxxxx --from-date 2021-08-01 --to-date 2021-09-30
   $SCRIPT_NAME --device-name esp8266_1 --device espxxxx --from-date 2021-08-01
-  $SCRIPT_NAME --device-name esp8266_1 --device espxxxx --to-date 2021-09-30"
-  $SCRIPT_NAME --device-name esp8266_1 --device espxxxx 
+  $SCRIPT_NAME --device-name esp8266_1 --device espxxxx --to-date 2021-09-30
+  $SCRIPT_NAME --device-name esp8266_1 --device espxxxx
   $SCRIPT_NAME --device-name esp8266_1 -d espxxxx -f 2021-08-01 -t 2021-09-30
   $SCRIPT_NAME --device-name esp8266_1 -d espxxxx -f 2021-08-01
   $SCRIPT_NAME --device-name esp8266_1 -d espxxxx -t 2021-09-30
   $SCRIPT_NAME --device-name esp8266_1 -d espxxxx
+
+2.Output device csv:
+  $SCRIPT_NAME --output-device-csv
 END
 }
 
@@ -51,6 +57,12 @@ suffix_datetime() {
     echo "$retval"
 }
 
+get_device_csv() {
+cat<<-EOF | query -csv
+    SELECT * FROM t_device ORDER BY id;
+EOF
+}
+
 get_csv() {
     dev_name="$1";
     where="$2";
@@ -71,7 +83,7 @@ EOF
 
 params=$(getopt -n "$SCRIPT_NAME" \
        -o d:f:t: \
-       -l device-name: -l from-date: -l to-date: -l help \
+       -l device-name: -l from-date: -l to-date: -l output-device-csv -l help \
        -- "$@")
 
 # Check command exit status
@@ -85,6 +97,7 @@ eval set -- "$params"
 device_name=
 from_date=
 to_date=
+output_device_csv=false
 
 # Parse options
 # Positional parameter count: $#
@@ -103,6 +116,10 @@ do
       to_date=$2
       shift 2
       ;;
+    --output-device-csv)
+      output_device_csv=true
+      shift 
+      ;;
     --help)
       print_help
       exit 0
@@ -113,6 +130,18 @@ do
       ;;
   esac
 done
+
+if [[ $output_device_csv == true ]]; then
+   echo '"id","name"' > "$PATH_EXPORT_CSV/$DEVICE_CSV_NAME"
+   get_device_csv >> "$PATH_EXPORT_CSV/$DEVICE_CSV_NAME"
+   if [ $? = 0 ]; then
+      echo "Output device csv to $PATH_EXPORT_CSV/$DEVICE_CSV_NAME"
+      row_count=$(cat "${PATH_EXPORT_CSV}/${DEVICE_CSV_NAME}" | wc -l)
+      row_count=$(( row_count - 1))
+      echo "Device record count: ${row_count}" 
+   fi
+   exit 0   
+fi
 
 echo "$SCRIPT_NAME --device-name $device_name --from-date $from_date --to-date $to_date"
 
@@ -153,8 +182,9 @@ header='"did","measurement_time","temp_out","temp_in","humid","pressure"'
 echo $header > "$PATH_EXPORT_CSV/$filename"
 get_csv "$device_name" "$where" >> "$PATH_EXPORT_CSV/$filename"
 if [ $? = 0 ]; then
+   echo "Output weather csv to $PATH_EXPORT_CSV/$filename"
    row_count=$(cat "${PATH_EXPORT_CSV}/${filename}" | wc -l)
    row_count=$(( row_count - 1))
-   echo "Record count: ${row_count}" 
+   echo "Weather record count: ${row_count}" 
 fi   
 
