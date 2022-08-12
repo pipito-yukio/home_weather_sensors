@@ -23,7 +23,7 @@ Example:
   $SCRIPT_NAME --device-name esp8266_1 --device espxxxx 
   $SCRIPT_NAME --device-name esp8266_1 -d espxxxx -f 2021-08-01 -t 2021-09-30
   $SCRIPT_NAME --device-name esp8266_1 -d espxxxx -f 2021-08-01
-  $SCRIPT_NAME --device-name esp8266_1 -d espxxxx -t 2021-09-30"
+  $SCRIPT_NAME --device-name esp8266_1 -d espxxxx -t 2021-09-30
   $SCRIPT_NAME --device-name esp8266_1 -d espxxxx
 END
 }
