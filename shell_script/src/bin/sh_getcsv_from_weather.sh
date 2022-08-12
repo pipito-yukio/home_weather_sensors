@@ -71,7 +71,7 @@ EOF
 
 params=$(getopt -n "$SCRIPT_NAME" \
        -o d:f:t: \
-       -l device-name: -l from-date: -l to-date: \
+       -l device-name: -l from-date: -l to-date: -l help \
        -- "$@")
 
 # Check command exit status
