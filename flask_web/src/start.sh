@@ -17,9 +17,10 @@ fi
 # /etc/hosts in following line
 # xxx.xxx.xxx.xx myhost.local myhost -> myhost.local
 host_name="$(/bin/cat /etc/hostname)"
-export IP_HOST="${host_name}.local"
-export ENV=$env_mode
-echo "$IP_HOST with $ENV"
+IP_HOST_ORG="${host_name}.local"   # ADD host suffix ".local"
+export IP_HOST="${IP_HOST_ORG,,}"  # to lowercase
+export FLASK_ENV=$env_mode
+echo "$IP_HOST with $FLASK_ENV"
 
 EXEC_PATH=
 if [ -n "$PATH_WEBAPP" ]; then

@@ -1,5 +1,6 @@
 import os
 import time
+
 from weather_finder import app, app_logger
 
 """
@@ -7,7 +8,7 @@ This module load after app(==__init__.py)
 """
 
 if __name__ == '__main__':
-    has_prod = os.environ.get("ENV") == "production"
+    has_prod = os.environ.get("FLASK_ENV") == "production"
     # app config SERVER_NAME
     srv_host = app.config["SERVER_NAME"]
     srv_hosts = srv_host.split(":")
@@ -22,7 +23,8 @@ if __name__ == '__main__':
             retry = 0
             while True:
                 try:
-                    serve(app, host=host, port=port)
+                    # console log for Reqeust suppress: _quiet=True 
+                    serve(app, host=host, port=port, _quiet=True)
                     # Not raise OSError 
                     break
                 except OSError as oserr:

@@ -1,18 +1,22 @@
 import os
 import uuid
+
 from flask import Flask
+
 from weather_finder.log import logsetting
-from weather_finder.config import config_dict
 
 app = Flask(__name__)
 app_logger = logsetting.get_logger('app_main')
 app.config.from_object('weather_finder.config')
 app.config.from_pyfile(os.path.join(".", "messages/messages.conf"), silent=False)
 app.secret_key = uuid.uuid4().bytes
+# Strip newline
+app.jinja_env.lstrip_blocks = True
+app.jinja_env.trim_blocks = True
 
 # サーバホストとセッションのドメインが一致しないとブラウザにセッションIDが設定されない
 IP_HOST = os.environ.get('IP_HOST', None)
-has_prod = os.environ.get("ENV") == "production"
+has_prod = os.environ.get("FLASK_ENV") == "production"
 if has_prod:
     # Production mode
     SERVER_HOST = IP_HOST + ":8080"
