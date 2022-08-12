@@ -44,11 +44,12 @@ def index():
                            errmsgs=errmsgs
                            )
 
+
 @app.route(APP_ROOT + 'download_csv', methods=["POST"])
 def download_csv():
     if request.form.get("downloadWeather"):
         # Download Weather CSV
-        app_logger.info("downloadWeather")
+        app_logger.debug("downloadWeather")
         device_name = request.form.get("deviceName")
         date_from = request.form.get("dateFrom")
         date_to = request.form.get("dateTo")

@@ -18,7 +18,7 @@
     },
     "fileHandler": {
       "class": "logging.FileHandler",
-      "level": "DEBUG",
+      "level": "INFO",
       "formatter": "fileFormatter",
       "filename": "{}/weatherfinder.log"
     }
@@ -26,7 +26,7 @@
   "loggers": {
     "app_main": {
       "handlers": ["fileHandler"],
-      "level": "DEBUG",
+      "level": "INFO",
       "propergate": false
     }
   }
