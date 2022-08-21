@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import time
 import signal
@@ -14,8 +15,6 @@ from log import logsetting
 
 """
 Continue to output the argument message to the OLED
-[Terminate]
-Terminate button down.
 """
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
@@ -26,43 +25,27 @@ DISPLAY_SIZE = (100, 16)
 # Global instance
 pi = None
 device, interface = None, None
-# This process terminate button pin
-TERMINATE_PIN = 12
-# Button callback
-cb_terminate = None
-# Terminate flag
-terminate_on = False
-
-
-def cleanup():
-    if cb_terminate is not None:
-        cb_terminate.cancel()
-    pi.write(TERMINATE_PIN, pigpio.LOW)
-    pi.stop()
+isLogLevelDebug = False
 
 
 def detect_signal(signum, frame):
     logger.info("signum: {}, frame: {}".format(signum, frame))
     if signum == signal.SIGTERM:
-        # signal shutdown
+        # signal shutdown or kill
         cleanup()
         exit(0)
 
 
-def change_terminate(gpio_pin, level, tick):
-    global terminate_on
-    logger.debug("pin: {}, level: {}, tick: {}".format(gpio_pin, level, tick))
-    terminate_on = True
-
-
-def setup_gpio():
-    global cb_terminate
-    pi.set_mode(TERMINATE_PIN, pigpio.INPUT)
-    pi.write(TERMINATE_PIN, pigpio.LOW)
-    # Set internal pull-down register.
-    pi.set_pull_up_down(TERMINATE_PIN, pigpio.PUD_DOWN)
-    # SW OFF(LOW) -> ON(HIGH)
-    cb_terminate = pi.callback(TERMINATE_PIN, pigpio.RISING_EDGE, change_terminate)
+def cleanup():
+    if device is not None:
+        try:
+            # The GPIO channel has not been set up as an OUTPUT
+            #device.cleanup()
+            # Initializes the device memory with an empty (blank) image.
+            device.clear()
+        except Exception as ex:
+            logger.warning(ex)
+    pi.stop()
 
 
 def create_image(width, height):
@@ -77,9 +60,6 @@ def display_text(text, select_font=None):
 def display_list(lines, select_font=None):
     line_cnt = len(lines)
     for i, line in enumerate(lines):
-        if terminate_on:
-            break
-
         display_text(line, select_font=select_font)
         if i < line_cnt - 1:
             time.sleep(2)
@@ -93,10 +73,6 @@ def scroll_text(text, textWd, textHt, select_font=None, speed=1):
 
     i = 0
     while i < dx + textWd:
-        # Check terminate flog.
-        if terminate_on:
-            break
-
         virtual.set_position((i, 0))
         i += speed
         time.sleep(0.025)
@@ -111,14 +87,22 @@ if __name__ == "__main__":
     # Check shutdown signal
     signal.signal(signal.SIGTERM, detect_signal)
 
+    isLogLevelDebug = logger.getEffectiveLevel() <= logging.DEBUG
+    # Self process ID: use process kill
+    if isLogLevelDebug:
+        pid = os.getpid()
+        logger.debug("PID: {}".format(pid))
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--encoded-message", type=str, required=True, help="URLEncoded message.")
     parser.add_argument("--has-list", action="store_true", default=False, help="Messages with Tab separated.")
     args = parser.parse_args()
-    logger.debug("args: {}".format(args))
+    if isLogLevelDebug:
+        logger.debug("args: {}".format(args))
     encoded_message = args.encoded_message
     display_message = unquote_plus(encoded_message)
-    logger.debug("display_message: {}".format(display_message))
+    if isLogLevelDebug:
+        logger.debug("display_message: {}".format(display_message))
     # リストならTAB区切り
     has_list = args.has_list
     if has_list:
@@ -126,15 +110,11 @@ if __name__ == "__main__":
 
     # Configuration
     oled_conf = FU.read_json(os.path.join(base_dir, "conf", "conf_oled.json"))
-    logger.info("oled_conf: {}".format(oled_conf))
+    if isLogLevelDebug:
+        logger.debug("oled_conf: {}".format(oled_conf))
     if_conf = oled_conf["interface"]
+    REPEAT_SLEEP = oled_conf["repeatSleep"]
     font_conf = oled_conf["font"]
-    actions =  oled_conf["actions"]
-    REPEAT_SLEEP = actions["repeatSleep"]
-    # Terminate button setting.
-    TERMINATE_PIN = actions["terminate"]["PIN"]
-    logger.debug("TERMINATE_PIN: {}".format(TERMINATE_PIN))
-    setup_gpio()
 
     # OLED setting.
     interface = bitbang_6800(RS=if_conf["RS"], E=if_conf["E"], PINS=if_conf["PINS"])
@@ -145,9 +125,10 @@ if __name__ == "__main__":
         font = ImageFont.truetype(font_conf["name"], font_conf["size"])
         if not has_list:
             txtWd, txtHt = img_draw.textsize(display_message, font=font)
-            logger.debug("txtWd: {}, txtHt: {}".format(txtWd, txtHt))
+            if isLogLevelDebug:
+                logger.debug("txtWd: {}, txtHt: {}".format(txtWd, txtHt))
         one_shot = False
-        while not terminate_on:
+        while True:
             if has_list:
                 display_list(display_lines, select_font=font)
             elif txtWd > device.width + 20:
@@ -158,9 +139,6 @@ if __name__ == "__main__":
                     display_text(display_message, select_font=font)
                     one_shot = True
 
-            # Check terminate flog.
-            if terminate_on:
-                break
             time.sleep(REPEAT_SLEEP)
     except KeyboardInterrupt:
         pass
