@@ -1,0 +1,12 @@
+{
+  "explanation": {
+    "enable": "raspi-zero:true, raspi-4:false, Do not send duplicate.",
+    "subject": "if blank then Program default else this subject.",
+    "content-template": "1 parameter is time of occurrence, if blank then default message.",
+    "recipients": "[] mean environment GMAIL_USER in .bashrc."
+  },
+  "enable": true,
+  "subject": "",
+  "content-template": "Weather Sensor UDP packet is delayed at [{}]",
+  "recipients": ["exmaple.user1@yourdomain.com", "exmaple.user2@gmail.com"]
+}
