@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import pigpio
 import signal
@@ -10,7 +11,7 @@ from datetime import datetime
 from urllib.parse import quote_plus
 import db.weatherdb as wdb
 import util.file_util as FU
-from mail.gmail_sender import GMailer, GMAIL_USERNAME
+from mail.gmail_sender import GMailer
 from lib.ht16k33 import Brightness, BUS_NUM
 from lib.led4digit7seg import LED4digit7Seg, LEDCommon, LEDNumber
 from log import logsetting
@@ -51,7 +52,6 @@ I2C_ADDRESS = 0x70
 BUFF_SIZE = 1024
 # UDP packet receive timeout 12 minutes
 RECV_TIMEOUT = 12. * 60
-# FMT_MAIL_CONTENT = ""
 FMT_MAIL_CONTENT = "[{}] Weather sensors UDP packet is delayed, so the battery may be dead."
 MAIL_SUBJECT = "Weather sensor UDP packet is delayed."
 
@@ -71,6 +71,7 @@ THRESHOLD_DIFF_TICK = 500000
 # for delayed notificaton
 mailer = None
 delayed_mail_sent = False
+isLogLevelDebug = False
 # Subprocess configuration
 conf_subprocess = None
 
@@ -81,6 +82,42 @@ NextBrightness = {Brightness.HIGH: Brightness.MID,
                   Brightness.DIM: Brightness.HIGH}
 
 
+def mail_config():
+    """
+    Mail configuration
+    :return: [is Sendmail: True or False], [subject], [content-template], [recipients]
+    """
+    conf_path = os.path.join(base_dir, "conf", "conf_sendmail.json")
+    is_sendmail=True
+    mail_conf = None
+    if os.path.exists(conf_path):
+        mail_conf = FU.read_json(conf_path)
+        if isLogLevelDebug:
+            logger.debug(mail_conf)
+        is_sendmail = mail_conf["enable"]
+
+    if is_sendmail:
+        if mail_conf is not None:
+            # Custom configuration
+            if len(mail_conf["subject"]) > 0:
+                subject = mail_conf["subject"]
+            else:
+                subject = MAIL_SUBJECT
+            content_template = mail_conf["content-template"]
+            recipients = mail_conf["recipients"]
+        else:
+            # Default configuration
+            subject = MAIL_SUBJECT
+            content_template = FMT_MAIL_CONTENT
+            recipients = None
+
+    if isLogLevelDebug:
+        logger.debug("is_sendmail: {}\nsubject: {}\ncontent-template: {}\nrecipients: {}".format(
+            is_sendmail, subject, content_template, recipients
+        ))
+    return is_sendmail, subject, content_template, recipients
+
+
 def detect_signal(signum, frame):
     """
     Detect shutdown, and execute cleanup.
@@ -89,7 +126,7 @@ def detect_signal(signum, frame):
     :return:
     """
     logger.info("signum: {}, frame: {}".format(signum, frame))
-    if signum == signal.SIGTERM or signum == signal.SIGSTOP:
+    if signum == signal.SIGTERM:
         # signal shutdown
         cleanup()
         # Current process terminate
@@ -103,12 +140,14 @@ def has_i2cdevice(slave_addr):
     :return: if available True, not False.
     """
     handle = pi.i2c_open(BUS_NUM, slave_addr)
-    logger.debug("i2c_handle: {}".format(handle))
+    if isLogLevelDebug:
+        logger.debug("i2c_handle: {}".format(handle))
     is_available = False
     if handle >= 0:
         try:
             b = pi.i2c_read_byte(handle)
-            logger.debug("read_byte: {}".format(b))
+            if isLogLevelDebug:
+                logger.debug("read_byte: {}".format(b))
             is_available = True
         except Exception as e:
             logger.warning("{}".format(e))
@@ -127,12 +166,15 @@ def change_brightness(gpio_pin, level, tick):
     :param tick: tick time.
     """
     global curr_brightness, prev_tick
-    logger.debug("pin:{}, level:{}, tick: {}".format(gpio_pin, level, tick))
+    if isLogLevelDebug:
+        logger.debug("pin:{}, level:{}, tick: {}".format(gpio_pin, level, tick))
     if prev_tick != 0:
         tick_diff = pigpio.tickDiff(prev_tick, tick)
-        logger.debug("tick_diff:{}".format(tick_diff))
+        if isLogLevelDebug:
+            logger.debug("tick_diff:{}".format(tick_diff))
         if tick_diff < THRESHOLD_DIFF_TICK:
-            logger.debug("tick_diff:{} < {} return".format(tick_diff, THRESHOLD_DIFF_TICK))
+            if isLogLevelDebug:
+                logger.debug("tick_diff:{} < {} return".format(tick_diff, THRESHOLD_DIFF_TICK))
             return
 
     prev_tick = tick
@@ -160,7 +202,8 @@ def subproc_displaymessage(delayed_datetime):
     """
     msg = conf_subprocess["displayMessage"]["msgfmt"].format(delayed_datetime)
     encoded = quote_plus(msg)
-    logger.debug("encoded: {}".format(encoded))
+    if isLogLevelDebug:
+        logger.debug("encoded: {}".format(encoded))
     script = conf_subprocess["displayMessage"]["script"]
     exec_status = subprocess.run([script, "--encoded-message", encoded])
     logger.info("Subprocess DisplayMessage terminated: {}".format(exec_status))
@@ -175,15 +218,17 @@ def subproc_playmelody():
     logger.info("Subprocess PlayMelody terminated: {}".format(exec_status))
 
 
-def send_mail(content):
+def send_mail(subject, content, recipients):
     """
-    Send notification to my gmail account.
-    :param content: notification content
+    Send notification to recipients
+    :param subject:
+    :param content:
+    :param recipients:
     """
     try:
         # Use application passwd (for 2 factor authenticate)
-        mailer.sendmail(GMAIL_USERNAME, MAIL_SUBJECT, content)
-        logger.info("Mail sent -> {}".format(content))
+        mailer.sendmail(subject, content, recipients)
+        logger.info("Mail sent to -> {}".format(recipients))
     except Exception as err:
         logger.warning(err)
 
@@ -341,24 +386,28 @@ def loop(client):
                     logger.info("Subprocess DisplayMessage thread start.")
                     display_thread.start()
 
-                # Send Gmail.
-                delayed_now = now.strftime('%Y-%m-%d %H:%M')
-                mail_thread = threading.Thread(target=send_mail, args=(delayed_now, ))
-                logger.info("Mail Thread start.")
-                mail_thread.start()
+                # Send Gmail: Read every occurence
+                (is_sendmail, subject, content_template, recipients) = mail_config()
+                if is_sendmail:
+                    delayed_now = now.strftime('%Y-%m-%d %H:%M')
+                    content = content_template.format(delayed_now)
+                    mail_thread = threading.Thread(target=send_mail, args=(subject, content, recipients,))
+                    logger.info("Mail Thread start.")
+                    mail_thread.start()
                 delayed_mail_sent = True
             continue
 
         if server_ip != addr:
             server_ip = addr
-            logger.debug("server ip: {}".format(server_ip))
+            logger.info("server ip: {}".format(server_ip))
 
         # Reset flag.
         if delayed_mail_sent:
             delayed_mail_sent = False
         # From ESP output: device_name, temp_out, temp_in, humid, pressure
         line = data.decode("utf-8")
-        logger.debug(line)
+        if isLogLevelDebug:
+            logger.debug(line)
         record = line.split(",")
         # output 4Digit7SegLED
         if led_available:
@@ -383,6 +432,7 @@ if __name__ == '__main__':
         logger.warning("pigpiod not stated!")
         exit(1)
 
+    isLogLevelDebug = logger.getEffectiveLevel() <= logging.DEBUG
     parser = argparse.ArgumentParser()
     parser.add_argument("--udp-port", type=int, default=WEATHER_UDP_PORT, help="Port from UDP Server[ESPxx].")
     parser.add_argument("--brightness-pin", type=int, default=BRIGHTNESS_PIN, help="Brightness change SW Pin.")
@@ -394,13 +444,16 @@ if __name__ == '__main__':
 
     # Configuration
     app_conf = FU.read_json(os.path.join(base_dir, "conf", "conf_udpmon.json"))
-    logger.info("app_conf: {}".format(app_conf))
+    if isLogLevelDebug:
+        logger.debug(app_conf)
     # UDP receive timeout.
     RECV_TIMEOUT = float(app_conf["monitor"]["recv_timeout_seconds"])
-    # display delayed message configration
+    # Subprocess configration
     conf_subprocess = app_conf["subprocess"]
 
-    mailer = GMailer()
+    # GMailer
+    mailer = GMailer(logger=logger)
+
     hostname = socket.gethostname()
     # Receive broadcast
     broad_address = ("", args.udp_port)
