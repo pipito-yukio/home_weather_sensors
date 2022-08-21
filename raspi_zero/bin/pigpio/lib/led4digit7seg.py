@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 from .ht16k33 import HT16K33, BUS_NUM
 
@@ -172,7 +173,7 @@ class LED4digit7Seg(HT16K33):
         super().__init__(pi, slave_addr, bus_number, brightness=brightness, logger=logger)
         self.common = common
         self.logger = logger
-        self.debug_once = logger is not None
+        self.debug_once = logger is not None and (logger.getEffectiveLevel() <= logging.DEBUG)
 
     def _make_int_datas(self, digits):
         # カソードコモンLED用
@@ -261,7 +262,7 @@ class LED4digit7Seg(HT16K33):
     def printFloat(self, float_val, led_num=LEDNumber.N1):
         if float_val < -99.9 or float_val > 999.9:
             datas = self.SEG_OUTOFRANGE
-            if self.debug_once:
+            if self.logger is not None:
                 self.logger.warning("float value is out of range: {}".format(float_val))
         else:
             datas = self._generate_float_datas(float_val)

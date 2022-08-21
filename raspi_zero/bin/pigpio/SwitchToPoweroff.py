@@ -1,5 +1,5 @@
-# import argparse
 import argparse
+import logging
 import subprocess as proc
 import time
 import pigpio
@@ -26,6 +26,7 @@ LONGPUSH_THRESHOLD = 5 * 1000000 # 5 seconds
 # Global variable
 prev_tick = 0
 shutdown_flag = False
+isLogLevelDebug = False
 
 
 def power_off():
@@ -48,7 +49,8 @@ def power_off():
 
 def change_switch(gpio_pin, level, tick):
     global prev_tick, shutdown_flag
-    logger.debug("pin: {}, level: {}, tick: {}, prev_tick: {}".format(gpio_pin, level, tick, prev_tick))
+    if isLogLevelDebug:
+        logger.debug("pin: {}, level: {}, tick: {}, prev_tick: {}".format(gpio_pin, level, tick, prev_tick))
     if level == 0 and prev_tick == 0:
         prev_tick = tick
         # Start blink LED
@@ -91,6 +93,7 @@ if __name__ == '__main__':
         logger.warning("pigpiod not stated!")
         exit(1)
 
+    isLogLevelDebug = logger.getEffectiveLevel() <= logging.DEBUG
     parser = argparse.ArgumentParser()
     parser.add_argument("--poweroff-pin", type=int, default=POWER_OFF_PIN, help="PowerOff SW pin.")
     parser.add_argument("--ledblink-pin", type=int, default=LED_BLINK_PIN, help="Blinking LED pin.")
