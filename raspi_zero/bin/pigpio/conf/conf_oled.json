@@ -4,14 +4,9 @@
     "E": 6,
     "PINS": [13, 19, 16, 26]
   },
+  "repeatSleep": 2.0,
   "font": {
     "name": "fonts-japanese-gothic.ttf",
     "size": 14
-  },
-  "actions": {
-    "terminate": {
-      "PIN": 12
-    },
-    "repeatSleep": 2.0
   }
 }
