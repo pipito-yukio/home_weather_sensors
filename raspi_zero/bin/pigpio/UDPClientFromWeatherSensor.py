@@ -62,6 +62,7 @@ udp_client = None
 # Global flag
 led_available = False
 has_led_i2c_error =False
+i2c_error_count = 0
 # Callback brightness switch
 cb_brightness = None
 curr_brightness = None
@@ -123,14 +124,13 @@ def detect_signal(signum, frame):
     Detect shutdown, and execute cleanup.
     :param signum: Signal number
     :param frame: frame
-    :return:
     """
     logger.info("signum: {}, frame: {}".format(signum, frame))
     if signum == signal.SIGTERM:
         # signal shutdown
         cleanup()
         # Current process terminate
-        exit(-1 if has_led_i2c_error else 0)
+        exit(0)
 
 
 def has_i2cdevice(slave_addr):
@@ -195,18 +195,19 @@ def setup_gpio():
     cb_brightness = pi.callback(BRIGHTNESS_PIN, pigpio.RISING_EDGE, change_brightness)
 
 
-def subproc_displaymessage(delayed_datetime):
+def subproc_displaymessage(reason_key, at_datetime):
     """
     Display delayed message on Subprocess Display message script.
-    :param delayed_datetime: happen delayed datetime
+    :param reason_key: happen reason key
+    :param at_datetime: happen at datetime
     """
-    msg = conf_subprocess["displayMessage"]["msgfmt"].format(delayed_datetime)
+    msg = conf_subprocess["displayMessage"]["msgfmt"][reason_key].format(at_datetime)
     encoded = quote_plus(msg)
     if isLogLevelDebug:
         logger.debug("encoded: {}".format(encoded))
     script = conf_subprocess["displayMessage"]["script"]
     exec_status = subprocess.run([script, "--encoded-message", encoded])
-    logger.info("Subprocess DisplayMessage terminated: {}".format(exec_status))
+    logger.warning("Subprocess DisplayMessage terminated: {}".format(exec_status))
 
 
 def subproc_playmelody():
@@ -215,7 +216,7 @@ def subproc_playmelody():
     """
     script = conf_subprocess["playMelody"]["script"]
     exec_status = subprocess.run([script])
-    logger.info("Subprocess PlayMelody terminated: {}".format(exec_status))
+    logger.warning("Subprocess PlayMelody terminated: {}".format(exec_status))
 
 
 def send_mail(subject, content, recipients):
@@ -228,7 +229,7 @@ def send_mail(subject, content, recipients):
     try:
         # Use application passwd (for 2 factor authenticate)
         mailer.sendmail(subject, content, recipients)
-        logger.info("Mail sent to -> {}".format(recipients))
+        logger.warning("Mail sent to -> {}".format(recipients))
     except Exception as err:
         logger.warning(err)
 
@@ -253,7 +254,7 @@ def led_standby():
     led_driver.printOutOfRange(led_num=LEDNumber.N4)
 
 
-def led_show_i2cerro():
+def led_show_i2cerror():
     """ Raise exception to 'EEEE' """
     led_driver.printError(led_num=LEDNumber.N1)
     led_driver.printError(led_num=LEDNumber.N2)
@@ -362,7 +363,7 @@ def loop(client):
     Infinit UDP packet monitor loop.
     :param client: UDP socket
     """
-    global delayed_mail_sent, has_led_i2c_error
+    global delayed_mail_sent, has_led_i2c_error, i2c_error_count
     # Rest I2C Error flag.
     has_led_i2c_error = False
     server_ip = ''
@@ -377,13 +378,13 @@ def loop(client):
             if delayed_mail_sent is not None:
                 if conf_subprocess["playMelody"]["enable"]:
                     melody_thread = threading.Thread(target=subproc_playmelody)
-                    logger.info("Subprocess PlayMelody thread start.")
+                    logger.warning("Subprocess PlayMelody thread start.")
                     melody_thread.start()
                 if conf_subprocess["displayMessage"]["enable"]:
                     # Generate short message for Raspberry Pi zero (not scroll)
                     time_now = now.strftime('%H:%M')
-                    display_thread = threading.Thread(target=subproc_displaymessage, args=(time_now,))
-                    logger.info("Subprocess DisplayMessage thread start.")
+                    display_thread = threading.Thread(target=subproc_displaymessage, args=("udp-delay", time_now,))
+                    logger.warning("Subprocess DisplayMessage thread start.")
                     display_thread.start()
 
                 # Send Gmail: Read every occurence
@@ -392,7 +393,7 @@ def loop(client):
                     delayed_now = now.strftime('%Y-%m-%d %H:%M')
                     content = content_template.format(delayed_now)
                     mail_thread = threading.Thread(target=send_mail, args=(subject, content, recipients,))
-                    logger.info("Mail Thread start.")
+                    logger.warning("Mail Thread start.")
                     mail_thread.start()
                 delayed_mail_sent = True
             continue
@@ -409,21 +410,33 @@ def loop(client):
         if isLogLevelDebug:
             logger.debug(line)
         record = line.split(",")
+        # Insert weather DB with local time
+        # unix_tmstmp = int(time.time())   # time.time() is UTC unix epoch
+        local_time = time.localtime()
+        unix_tmstmp = time.mktime(local_time)
+        wdb.insert(*record, measurement_time=unix_tmstmp, logger=logger)
+
         # output 4Digit7SegLED
         if led_available:
             try:
                 output_led(record[1], record[2], record[3], record[4])
             except Exception as i2c_err:
                 has_led_i2c_error = True
-                # Show I2C Error.
-                led_show_i2cerro()
-                raise i2c_err
-
-        # Insert weather DB with local time
-        # unix_tmstmp = int(time.time())   # time.time() is UTC unix epoch
-        local_time = time.localtime()
-        unix_tmstmp = time.mktime(local_time)
-        wdb.insert(*record, measurement_time=unix_tmstmp, logger=logger)
+                logger.warning(i2c_err)
+                # Display at onece.
+                if i2c_error_count == 0:
+                    # Show I2C Error at once.
+                    try:
+                        led_show_i2cerror()
+                    except Exception as e:
+                        pass
+                    # Output OLED display
+                    time_now = now.strftime('%H:%M')
+                    display_thread = threading.Thread(target=subproc_displaymessage, args=("i2c-error", time_now,))
+                    logger.warning("Subprocess DisplayMessage thread start.")
+                    display_thread.start()
+                i2c_error_count += 1
+                logger.warning("I2C error count: {} at {}".format(i2c_error_count, time_now))
 
 
 if __name__ == '__main__':

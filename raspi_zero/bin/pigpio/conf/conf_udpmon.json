@@ -9,7 +9,10 @@
     },
     "displayMessage": {
       "enable": true,
-      "msgfmt": "電池切れ{}",
+      "msgfmt": {
+        "udp-delay": "Delay at {}",
+        "i2c-error": "I2CErr at {}"
+      },
       "script": "/home/pi/bin/display_message_to_oled.sh"
     }
   }
