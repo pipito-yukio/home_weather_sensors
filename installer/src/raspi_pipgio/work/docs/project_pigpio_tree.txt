@@ -6,6 +6,7 @@
 │   │   ├── UDPClientFromWeatherSensor.py
 │   │   ├── conf
 │   │   │   ├── conf_udpmon.json
+│   │   │   ├── logconf_main_app.json
 │   │   │   ├── logconf_service_poweroff.json
 │   │   │   └── logconf_service_weather.json
 │   │   ├── db

@@ -1,14 +1,17 @@
 import argparse
+import logging
 import os
 import pigpio
 import signal
 import socket
+import subprocess
 import threading
 import time
 from datetime import datetime
+from urllib.parse import quote_plus
 import db.weatherdb as wdb
 import util.file_util as FU
-from mail.gmail_sender import GMailer, GMAIL_USERNAME
+from mail.gmail_sender import GMailer
 from lib.ht16k33 import Brightness, BUS_NUM
 from lib.led4digit7seg import LED4digit7Seg, LEDCommon, LEDNumber
 from log import logsetting
@@ -49,7 +52,6 @@ I2C_ADDRESS = 0x70
 BUFF_SIZE = 1024
 # UDP packet receive timeout 12 minutes
 RECV_TIMEOUT = 12. * 60
-# FMT_MAIL_CONTENT = ""
 FMT_MAIL_CONTENT = "[{}] Weather sensors UDP packet is delayed, so the battery may be dead."
 MAIL_SUBJECT = "Weather sensor UDP packet is delayed."
 
@@ -59,6 +61,8 @@ led_driver = None
 udp_client = None
 # Global flag
 led_available = False
+has_led_i2c_error =False
+i2c_error_count = 0
 # Callback brightness switch
 cb_brightness = None
 curr_brightness = None
@@ -68,10 +72,9 @@ THRESHOLD_DIFF_TICK = 500000
 # for delayed notificaton
 mailer = None
 delayed_mail_sent = False
-# Melody IC pin
-PIN_MELODY = 23
-PLAY_TIME, POSE_TIME, PLAY_REPEAT = 30, 30, 3
-melody_enable = False
+isLogLevelDebug = False
+# Subprocess configuration
+conf_subprocess = None
 
 # Dict for next brightness: HIGH > MID > LOW > DIM
 NextBrightness = {Brightness.HIGH: Brightness.MID,
@@ -80,17 +83,54 @@ NextBrightness = {Brightness.HIGH: Brightness.MID,
                   Brightness.DIM: Brightness.HIGH}
 
 
+def mail_config():
+    """
+    Mail configuration
+    :return: [is Sendmail: True or False], [subject], [content-template], [recipients]
+    """
+    conf_path = os.path.join(base_dir, "conf", "conf_sendmail.json")
+    is_sendmail=True
+    mail_conf = None
+    if os.path.exists(conf_path):
+        mail_conf = FU.read_json(conf_path)
+        if isLogLevelDebug:
+            logger.debug(mail_conf)
+        is_sendmail = mail_conf["enable"]
+
+    if is_sendmail:
+        if mail_conf is not None:
+            # Custom configuration
+            if len(mail_conf["subject"]) > 0:
+                subject = mail_conf["subject"]
+            else:
+                subject = MAIL_SUBJECT
+            content_template = mail_conf["content-template"]
+            recipients = mail_conf["recipients"]
+        else:
+            # Default configuration
+            subject = MAIL_SUBJECT
+            content_template = FMT_MAIL_CONTENT
+            recipients = None
+
+    if isLogLevelDebug:
+        logger.debug("is_sendmail: {}\nsubject: {}\ncontent-template: {}\nrecipients: {}".format(
+            is_sendmail, subject, content_template, recipients
+        ))
+    return is_sendmail, subject, content_template, recipients
+
+
 def detect_signal(signum, frame):
     """
     Detect shutdown, and execute cleanup.
     :param signum: Signal number
     :param frame: frame
-    :return:
     """
     logger.info("signum: {}, frame: {}".format(signum, frame))
     if signum == signal.SIGTERM:
         # signal shutdown
         cleanup()
+        # Current process terminate
+        exit(0)
 
 
 def has_i2cdevice(slave_addr):
@@ -100,12 +140,14 @@ def has_i2cdevice(slave_addr):
     :return: if available True, not False.
     """
     handle = pi.i2c_open(BUS_NUM, slave_addr)
-    logger.debug("i2c_handle: {}".format(handle))
+    if isLogLevelDebug:
+        logger.debug("i2c_handle: {}".format(handle))
     is_available = False
     if handle >= 0:
         try:
             b = pi.i2c_read_byte(handle)
-            logger.debug("read_byte: {}".format(b))
+            if isLogLevelDebug:
+                logger.debug("read_byte: {}".format(b))
             is_available = True
         except Exception as e:
             logger.warning("{}".format(e))
@@ -124,12 +166,15 @@ def change_brightness(gpio_pin, level, tick):
     :param tick: tick time.
     """
     global curr_brightness, prev_tick
-    logger.debug("pin:{}, level:{}, tick: {}".format(gpio_pin, level, tick))
+    if isLogLevelDebug:
+        logger.debug("pin:{}, level:{}, tick: {}".format(gpio_pin, level, tick))
     if prev_tick != 0:
         tick_diff = pigpio.tickDiff(prev_tick, tick)
-        logger.debug("tick_diff:{}".format(tick_diff))
+        if isLogLevelDebug:
+            logger.debug("tick_diff:{}".format(tick_diff))
         if tick_diff < THRESHOLD_DIFF_TICK:
-            logger.debug("tick_diff:{} < {} return".format(tick_diff, THRESHOLD_DIFF_TICK))
+            if isLogLevelDebug:
+                logger.debug("tick_diff:{} < {} return".format(tick_diff, THRESHOLD_DIFF_TICK))
             return
 
     prev_tick = tick
@@ -150,32 +195,27 @@ def setup_gpio():
     cb_brightness = pi.callback(BRIGHTNESS_PIN, pigpio.RISING_EDGE, change_brightness)
 
 
-def play_melody(repeat=1):
+
+def subproc_playmelody():
     """
-    Play the melody as an alert.
-    :param repeat: repeat count
+    Play the melody as an alert on Subprocess Play melody script.
     """
-    pi.set_mode(PIN_MELODY, pigpio.OUTPUT)
-    pi.write(PIN_MELODY, pigpio.LOW)
-    logger.info("Play melody start")
-    for i in range(repeat):
-        pi.write(PIN_MELODY, pigpio.HIGH)
-        time.sleep(PLAY_TIME)
-        pi.write(PIN_MELODY, pigpio.LOW)
-        if repeat > 1 and i < repeat:
-            time.sleep(POSE_TIME)
-    logger.info("Play melody finished")
+    script = conf_subprocess["playMelody"]["script"]
+    exec_status = subprocess.run([script])
+    logger.warning("Subprocess PlayMelody terminated: {}".format(exec_status))
 
 
-def send_mail(content):
+def send_mail(subject, content, recipients):
     """
-    Send notification to my gmail account.
-    :param content: notification content
+    Send notification to recipients
+    :param subject:
+    :param content:
+    :param recipients:
     """
     try:
         # Use application passwd (for 2 factor authenticate)
-        mailer.sendmail(GMAIL_USERNAME, MAIL_SUBJECT, content)
-        logger.info("Mail sent -> {}".format(content))
+        mailer.sendmail(subject, content, recipients)
+        logger.warning("Mail sent to -> {}".format(recipients))
     except Exception as err:
         logger.warning(err)
 
@@ -185,9 +225,9 @@ def cleanup():
     if cb_brightness is not None:
         cb_brightness.cancel()
     if led_driver is not None:
-        led_driver.cleanup()
-    if melody_enable:
-        pi.write(PIN_MELODY, pigpio.LOW)
+        # Check i2c connect.
+        if not has_led_i2c_error:
+            led_driver.cleanup()
     pi.stop()
     udp_client.close()
 
@@ -198,6 +238,14 @@ def led_standby():
     led_driver.printOutOfRange(led_num=LEDNumber.N2)
     led_driver.printOutOfRange(led_num=LEDNumber.N3)
     led_driver.printOutOfRange(led_num=LEDNumber.N4)
+
+
+def led_show_i2cerror():
+    """ Raise exception to 'EEEE' """
+    led_driver.printError(led_num=LEDNumber.N1)
+    led_driver.printError(led_num=LEDNumber.N2)
+    led_driver.printError(led_num=LEDNumber.N3)
+    led_driver.printError(led_num=LEDNumber.N4)
 
 
 def isfloat(val):
@@ -301,7 +349,9 @@ def loop(client):
     Infinit UDP packet monitor loop.
     :param client: UDP socket
     """
-    global delayed_mail_sent
+    global delayed_mail_sent, has_led_i2c_error, i2c_error_count
+    # Rest I2C Error flag.
+    has_led_i2c_error = False
     server_ip = ''
     # Timeout setting
     client.settimeout(RECV_TIMEOUT)
@@ -310,40 +360,63 @@ def loop(client):
             data, addr = client.recvfrom(BUFF_SIZE)
         except socket.timeout:
             logger.warning("Socket timeout!")
+            now = datetime.now()
             if delayed_mail_sent is not None:
-                # Play melody as an alert.
-                if melody_enable:
-                    melody_thread = threading.Thread(target=play_melody, args=(PLAY_REPEAT, ))
-                    logger.info("Melody Thread start.")
+                if conf_subprocess["playMelody"]["enable"]:
+                    melody_thread = threading.Thread(target=subproc_playmelody)
+                    logger.warning("Subprocess PlayMelody thread start.")
                     melody_thread.start()
-                # Send Gmail.
-                str_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                mail_content = FMT_MAIL_CONTENT.format(str_now)
-                mail_thread = threading.Thread(target=send_mail, args=(mail_content, ))
-                logger.info("Mail Thread start.")
-                mail_thread.start()
+
+                # Send Gmail: Read every occurence
+                (is_sendmail, subject, content_template, recipients) = mail_config()
+                if is_sendmail:
+                    delayed_now = now.strftime('%Y-%m-%d %H:%M')
+                    content = content_template.format(delayed_now)
+                    mail_thread = threading.Thread(target=send_mail, args=(subject, content, recipients,))
+                    logger.info("Mail Thread start.")
+                    mail_thread.start()
                 delayed_mail_sent = True
             continue
 
         if server_ip != addr:
             server_ip = addr
-            logger.debug("server ip: {}".format(server_ip))
+            logger.info("server ip: {}".format(server_ip))
 
         # Reset flag.
         if delayed_mail_sent:
             delayed_mail_sent = False
         # From ESP output: device_name, temp_out, temp_in, humid, pressure
         line = data.decode("utf-8")
-        logger.debug(line)
+        if isLogLevelDebug:
+            logger.debug(line)
         record = line.split(",")
-        # output 4Digit7SegLED
-        if led_available:
-            output_led(record[1], record[2], record[3], record[4])
         # Insert weather DB with local time
         # unix_tmstmp = int(time.time())   # time.time() is UTC unix epoch
         local_time = time.localtime()
         unix_tmstmp = time.mktime(local_time)
         wdb.insert(*record, measurement_time=unix_tmstmp, logger=logger)
+
+        # output 4Digit7SegLED
+        if led_available:
+            try:
+                output_led(record[1], record[2], record[3], record[4])
+            except Exception as i2c_err:
+                has_led_i2c_error = True
+                logger.warning(i2c_err)
+                # Display at onece.
+                if i2c_error_count == 0:
+                    # Show I2C Error at once.
+                    try:
+                        led_show_i2cerror()
+                    except Exception as e:
+                        pass
+                    # Output OLED display
+                    time_now = now.strftime('%H:%M')
+                    display_thread = threading.Thread(target=subproc_displaymessage, args=("i2c-error", time_now,))
+                    logger.warning("Subprocess DisplayMessage thread start.")
+                    display_thread.start()
+                i2c_error_count += 1
+                logger.warning("I2C error count: {} at {}".format(i2c_error_count, time_now))
 
 
 if __name__ == '__main__':
@@ -352,6 +425,7 @@ if __name__ == '__main__':
         logger.warning("pigpiod not stated!")
         exit(1)
 
+    isLogLevelDebug = logger.getEffectiveLevel() <= logging.DEBUG
     parser = argparse.ArgumentParser()
     parser.add_argument("--udp-port", type=int, default=WEATHER_UDP_PORT, help="Port from UDP Server[ESPxx].")
     parser.add_argument("--brightness-pin", type=int, default=BRIGHTNESS_PIN, help="Brightness change SW Pin.")
@@ -360,19 +434,19 @@ if __name__ == '__main__':
 
     signal.signal(signal.SIGTERM, detect_signal)
     BRIGHTNESS_PIN = args.brightness_pin
-    # Gmail sendor for Weather sensors UDP packet delay notification
 
     # Configuration
     app_conf = FU.read_json(os.path.join(base_dir, "conf", "conf_udpmon.json"))
-    logger.info("app_conf: {}".format(app_conf))
+    if isLogLevelDebug:
+        logger.debug(app_conf)
     # UDP receive timeout.
     RECV_TIMEOUT = float(app_conf["monitor"]["recv_timeout_seconds"])
-    conf_melody = app_conf["Melody"]
-    melody_enable = conf_melody["enable"]
-    PIN_MELODY = conf_melody["gpio_pin"]
-    PLAY_TIME, POSE_TIME, PLAY_REPEAT = conf_melody["play_time"], conf_melody["pose_time"], conf_melody["play_repeat"]
+    # Subprocess configration
+    conf_subprocess = app_conf["subprocess"]
 
-    mailer = GMailer()
+    # GMailer
+    mailer = GMailer(logger=logger)
+
     hostname = socket.gethostname()
     # Receive broadcast
     broad_address = ("", args.udp_port)
@@ -394,5 +468,7 @@ if __name__ == '__main__':
         loop(udp_client)
     except KeyboardInterrupt:
         pass
+    except Exception as err:
+        logger.error(err)
     finally:
         cleanup()

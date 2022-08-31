@@ -2,11 +2,15 @@
   "monitor": {
     "recv_timeout_seconds": 720
   },
-  "Melody": {
-    "enable": false,
-    "gpio_pin": 23,
-    "play_time": 30,
-    "pose_time": 30,
-    "play_repeat": 2
+  "subprocess": {
+    "playMelody": {
+      "enable": true,
+      "script": "/home/pi/bin/playmelody.sh"
+    },
+    "displayMessage": {
+      "enable": true,
+      "msgfmt": "電池切れ{}",
+      "script": "/home/pi/bin/display_message_to_oled.sh"
+    }
   }
 }

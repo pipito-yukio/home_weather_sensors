@@ -1,3 +1,4 @@
+import logging
 import pigpio
 from .mcp3000base import ADC, RESOLUTION, CMD_FUNC, READ_FUNC
 
@@ -47,8 +48,8 @@ class MCP3000:
         self.read_func = READ_FUNC[adc]
         self.resolution = RESOLUTION[adc]
         self.logger = logger
-        self.debug_once = self.logger is not None
-        if self.logger is not None:
+        self.debug_once = logger is not None and (logger.getEffectiveLevel() <= logging.DEBUG)
+        if self.debug_once:
             self.logger.debug("spi_handle: {}".format(self.spi_handle))
             self.logger.debug("v_ref: {}V, resolution: {}".format(self.v_ref, self.resolution))
             self.logger.debug("cmd_func: {}".format(self.cmd_func))

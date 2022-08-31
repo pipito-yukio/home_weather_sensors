@@ -1,0 +1,18 @@
+{
+  "actions": [
+    "killDisplayAndMelodyProcess",
+    "restartUdpmon"
+  ],
+  "killDisplayAndMelodyProcess": {
+    "PIN": 12,
+    "PUD_down": true,
+    "enable": true,
+    "script": "/home/pi/bin/kill_display_process.sh"
+  },
+  "restartUdpmon": {
+    "PIN": 24,
+    "PUD_down": true,
+    "enable": true,
+    "script": "/home/pi/bin/restart_udpmon.sh"
+  }
+}

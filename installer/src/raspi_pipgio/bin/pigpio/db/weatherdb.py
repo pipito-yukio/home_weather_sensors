@@ -1,5 +1,6 @@
 import datetime
 from datetime import timedelta
+import logging
 import os
 import sqlite3
 from .sqlite3db import get_connection, close_connection
@@ -16,7 +17,6 @@ weather_db = os.environ.get("PATH_WEATHER_DB", my_home + "/db/weather.db")
 
 # SQLite3 is 'RETURNING id' not available
 INSERT_DEVICE = "INSERT INTO t_device(name) VALUES (?)"
-ALL_DEVICES = "SELECT id, name FROM t_device ORDER BY id"
 FIND_DEVICE = "SELECT id FROM t_device WHERE name = ?"
 
 INSERT_WEATHER = """
@@ -44,7 +44,7 @@ def set_dbpath(dbpath):
     weather_db = dbpath
 
 
-def get_did(conn, device_name, add_device=True, logger=None):
+def get_did(conn, device_name, logger=None, isLogLevelDebug=False):
     """
     Get the device ID corresponding to the device name.
     1. if exist in cache, return from cache.
@@ -52,81 +52,62 @@ def get_did(conn, device_name, add_device=True, logger=None):
     3. if not exist in t_device, insert into t_device and return did
     :param conn: Weather Weather database connection
     :param device_name: Device name
-    :param add_device: flag into t_device, if True then insert into t_device and cache
     :param logger: application logger or None
+    :param isLogLevelDebug: logger is not None and logLevel=DEBUG
     :return: did
     """
-    try:
-        did = cache_did_map[device_name]
-    except KeyError:
-        did = None
-
+    did = cache_did_map.get(device_name)
+    if logger is not None and isLogLevelDebug:
+        logger.debug("device_name: {} -> cache_did_map in did: {}".format(device_name, did))
     if did is not None:
         return did
 
-    did = find_device(conn, device_name, logger)
+    did = find_device(conn, device_name, logger=logger, isLogLevelDebug=isLogLevelDebug)
     if did is not None:
         cache_did_map[device_name] = did
         return did
 
-    if not add_device:
-        return None
-
-    did = add_device(conn, device_name, logger)
+    did = add_device(conn, device_name, logger=logger, isLogLevelDebug=isLogLevelDebug)
     cache_did_map[device_name] = did
     return did
 
 
-def all_devices(logger=None):
-    """
-    All record name-ID dict in t_device
-    :param logger: application logger or None
-    :return: Dict {device name: id}, if not record then blank dict
-    """
-    devices = {}
-    conn = get_connection(weather_db, read_only=True, logger=logger)
-    for device in conn.execute(ALL_DEVICES):
-        devices[device[1]] = device[0] # {key: name, value: id}
-    conn.close()
-    return devices
-
-
-def find_device(conn, device_name, logger=None):
+def find_device(conn, device_name, logger=None, isLogLevelDebug=False):
     """
     Check device name in t_device.
     :param conn: Weather database connection
     :param device_name: Device name
     :param logger: application logger or None
+    :param isLogLevelDebug: logger is not None and logLevel=DEBUG
     :return: if exists then Device ID else None
     """
     with conn:
         cur = conn.execute(FIND_DEVICE, (device_name,))
         rec = cur.fetchone()
-    if logger is not None:
+    if logger is not None and isLogLevelDebug:
         logger.debug("{}: {}".format(device_name, rec))
     if rec is not None:
         rec = rec[0]
     return rec
 
 
-def add_device(conn, device_name, logger=None):
+def add_device(conn, device_name, logger=None, isLogLevelDebug=False):
     """
     Insert Device name to t_device and return inserted ID.
     :param conn: Weather database connection
     :param device_name: Device name
     :param logger: application logger or None
+    :param isLogLevelDebug: logger is not None and logLevel=DEBUG
     :return: inserted ID
     """
     try:
         with conn:
             conn.execute(INSERT_DEVICE, (device_name,))
-            if logger is not None:
-                logger.debug("ADD_DEVICE")
             # SQLite3 not returning id
             # did = cur.fetchone()[0]
         did = find_device(conn, device_name, logger)
-        if logger is not None:
-            logger.debug("id: {}, name: {}".format(did, device_name))
+        if logger is not None and isLogLevelDebug:
+            logger.debug("did: {}, device_name: {}".format(did, device_name))
     except sqlite3.Error as err:
         if logger is not None:
             logger.warning("error device_name:{}, {}".format(device_name, err))
@@ -166,6 +147,7 @@ def insert(device_name, temp_out, temp_in, humid, pressure, measurement_time=Non
     :param measurement_time: unix epoch at local time
     :param logger: application logger or None
     """
+    isLogLevelDebug = logger.getEffectiveLevel() <= logging.DEBUG
     conn = get_connection(weather_db, logger=logger)
     did = get_did(conn, device_name, logger=logger)
     rec = (did,
@@ -175,7 +157,7 @@ def insert(device_name, temp_out, temp_in, humid, pressure, measurement_time=Non
            to_float(humid),
            to_float(pressure)
            )
-    if logger is not None:
+    if logger is not None and isLogLevelDebug:
         logger.debug(rec)
     try:
         with conn:
@@ -220,6 +202,10 @@ class WeatherFinder:
         :param logger: application logger or None
         """
         self.logger = logger
+        if logger is not None and (logger.getEffectiveLevel() <= logging.DEBUG):
+            self.isLogLevelDebug = True
+        else:
+            self.isLogLevelDebug = False
         self.conn = conn
         self.closing_conn = self.conn is None
         self.cursor = None
@@ -345,7 +331,7 @@ class WeatherFinder:
         date_part = datetime.date.today()
         self._csv_name = name_suffix + "_" + date_part.strftime("%Y%m%d")
         sql += " ORDER BY did, measurement_time"
-        if self.logger is not None:
+        if self.isLogLevelDebug:
             self.logger.debug(sql)
         return count_sql, sql, criteria
 
@@ -359,7 +345,7 @@ class WeatherFinder:
          """
         if self.conn is None:
             self.conn = get_connection(weather_db, read_only=True, logger=self.logger)
-        did = get_did(self.conn, device_name, add_device=False, logger=self.logger)
+        did = get_did(self.conn, device_name, logger=self.logger)
         if did is None:
             return 0
 
@@ -389,7 +375,7 @@ class WeatherFinder:
         """
         if self.conn is None:
             self.conn = get_connection(weather_db, read_only=True, logger=self.logger)
-        did = get_did(self.conn, device_name, add_device=False, logger=self.logger)
+        did = get_did(self.conn, device_name, logger=self.logger)
         if did is None:
             return []
 

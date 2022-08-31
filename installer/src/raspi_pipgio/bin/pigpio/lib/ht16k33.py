@@ -1,3 +1,5 @@
+import logging
+
 """
 LEDドライバモジュール(HT16K33)制御クラス for pigpio
 """
@@ -20,6 +22,8 @@ class HT16K33:
         self.pi = pi
         # i2c_handle = /dev/self.i2c_bus-1
         self.i2c_handle = pi.i2c_open(bus_number, slave_addr)
+        self.logger = logger
+        self.debug_once = logger is not None and (logger.getEffectiveLevel() <= logging.DEBUG)
         if logger is not None:
             logger.info("i2c_handle: {}".format(self.i2c_handle))
         self.opened = True
