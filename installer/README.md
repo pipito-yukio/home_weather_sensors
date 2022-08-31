@@ -1,9 +1,11 @@
-----------------------
-To run the application
-----------------------
+### 1. pigpioアプリケーション
 
 ```
-./start.sh            # Development mode
-./start.sh prod       # production mode
-./start.sh production # production mode
+raspi_pigpio
+``` 
+
+### 1-2. flask Webアプリケーション
+
+```
+raspi_webapp
 ```
