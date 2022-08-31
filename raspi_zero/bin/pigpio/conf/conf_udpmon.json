@@ -1,6 +1,6 @@
 {
   "monitor": {
-    "recv_timeout_seconds": 900
+    "recv_timeout_seconds": 720
   },
   "subprocess": {
     "playMelody": {
@@ -9,10 +9,7 @@
     },
     "displayMessage": {
       "enable": true,
-      "msgfmt": {
-        "udp-delay": "Delay at {}",
-        "i2c-error": "I2CErr at {}"
-      },
+      "msgfmt": "電池切れ{}",
       "script": "/home/pi/bin/display_message_to_oled.sh"
     }
   }
