@@ -58,7 +58,7 @@
 </div>
 <br/>
 
-* 結局ラズパイは基板にネジで直付け。ラインはピンヘッダーに直接半田付けしています。  
+* 結局ラズパイは基板にネジで直付け。ラインはピンヘッダーに直接半田付けしました。  
 
 <div style="text-align:center;">
 <img src="images/DisplayWeatherSensorData_latest_back.png">
