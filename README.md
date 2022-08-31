@@ -605,8 +605,8 @@ WantedBy=multi-user.target                                                      
   - (7) cron
   - (8) pigpioサービスを有効に設定
   - (9) アプリ用サービスファイルを所定のディレクリにコピーしサービスを有効に設定する<br>
- ※ **(2), (3), (7), (8)はsudo権限での実行が必要**<br/>
-     **echo $my_passwd |** sudo **--stdin [ or -S ]***<br/>
+ ※ **(2), (3), (7), (8), (9) はsudo権限での実行が必要**<br/>
+     **echo $my_passwd |** sudo **--stdin [ or -S ]**<br/>
  ※ **引き続きWebアプリをインストールするのでリブートしない**
 
 ```bash
