@@ -195,20 +195,6 @@ def setup_gpio():
     cb_brightness = pi.callback(BRIGHTNESS_PIN, pigpio.RISING_EDGE, change_brightness)
 
 
-def subproc_displaymessage(reason_key, at_datetime):
-    """
-    Display delayed message on Subprocess Display message script.
-    :param reason_key: happen reason key
-    :param at_datetime: happen at datetime
-    """
-    msg = conf_subprocess["displayMessage"]["msgfmt"][reason_key].format(at_datetime)
-    encoded = quote_plus(msg)
-    if isLogLevelDebug:
-        logger.debug("encoded: {}".format(encoded))
-    script = conf_subprocess["displayMessage"]["script"]
-    exec_status = subprocess.run([script, "--encoded-message", encoded])
-    logger.warning("Subprocess DisplayMessage terminated: {}".format(exec_status))
-
 
 def subproc_playmelody():
     """
@@ -380,12 +366,6 @@ def loop(client):
                     melody_thread = threading.Thread(target=subproc_playmelody)
                     logger.warning("Subprocess PlayMelody thread start.")
                     melody_thread.start()
-                if conf_subprocess["displayMessage"]["enable"]:
-                    # Generate short message for Raspberry Pi zero (not scroll)
-                    time_now = now.strftime('%H:%M')
-                    display_thread = threading.Thread(target=subproc_displaymessage, args=("udp-delay", time_now,))
-                    logger.warning("Subprocess DisplayMessage thread start.")
-                    display_thread.start()
 
                 # Send Gmail: Read every occurence
                 (is_sendmail, subject, content_template, recipients) = mail_config()
@@ -393,7 +373,7 @@ def loop(client):
                     delayed_now = now.strftime('%Y-%m-%d %H:%M')
                     content = content_template.format(delayed_now)
                     mail_thread = threading.Thread(target=send_mail, args=(subject, content, recipients,))
-                    logger.warning("Mail Thread start.")
+                    logger.info("Mail Thread start.")
                     mail_thread.start()
                 delayed_mail_sent = True
             continue
