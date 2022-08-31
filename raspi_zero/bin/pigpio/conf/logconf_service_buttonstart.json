@@ -18,7 +18,7 @@
     },
     "fileHandler": {
       "class": "logging.FileHandler",
-      "level": "INFO",
+      "level": "DEBUG",
       "formatter": "fileFormatter",
       "filename": "{}/service_buttonstart.log"
     }
