@@ -50,6 +50,22 @@
 </div>
 <br/>
 
+* 気象データ表示板にラズパイを直付け (2022-08-31現在)  
+  当初は上記のようにラズパイのピンヘッダーにピンソケットを繋いでいましたが、ピンソケットでは簡単に抜けてしまう問題がありました。  
+  
+<div style="text-align:center;">
+<img src="images/DisplayWeatherSensorData_latest_front.png">
+</div>
+<br/>
+
+* 結局ラズパイは基板にネジで直付けすることにしました。ラインはピンヘッダーに直接半田付けしています。  
+
+<div style="text-align:center;">
+<img src="images/DisplayWeatherSensorData_latest_back.png">
+</div>
+<br/>
+
+
 ### 1-3. 気象データCSVダウンロード (flask web アプリケーション)
 
 * Flask Webアプリケーション
