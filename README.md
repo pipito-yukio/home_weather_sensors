@@ -586,8 +586,9 @@ WantedBy=multi-user.target                                                      
   - (4-1) - (4-7) pigpioアプリ用 Python仮想環境の作成と、Requirements.txtからライブラリをインストール
   - (5) 環境変数を読み込み ※データベースディレクリパス
   - (6) データベースとテーブル作成
-  - (7) pigpioサービスを有効に設定
-  - (8) アプリ用サービスファイルを所定のディレクリにコピーしサービスを有効に設定する<br>
+  - (7) cron
+  - (8) pigpioサービスを有効に設定
+  - (9) アプリ用サービスファイルを所定のディレクリにコピーしサービスを有効に設定する<br>
  ※ **(2), (3), (7), (8)はsudo権限での実行が必要**<br/>
      **echo $my_passwd |** sudo **--stdin [ or -S ]***<br/>
  ※ **引き続きWebアプリをインストールするのでリブートしない**
@@ -595,17 +596,16 @@ WantedBy=multi-user.target                                                      
 ```bash
 #!/bin/bash
 
-# (1) Execute before export my_passwd=xxxxxx
+# execute before export my_passwd=xxxxxx
 
-# (2) Add application environ values to .bashrc
+# add application environ values to .bashrc
 cat ~/work/add_env_in_bashrc.txt >> ~/.bashrc                                             (1)
 
-# (3-1) System update
 echo $my_passwd | sudo --stdin apt update && sudo apt -y upgrade                          (2)
-# (3-2) pigpio service is not installed on Headless OS.
+# headless os not installed.
 echo $my_passwd | sudo --stdin apt -y install python3-venv sqlite3 pigpio i2c-tools tree  (3)
 
-# (4) Create Virtual Python environment.
+# Create Virtual Python environment.
 mkdir py_venv                                                                              (4-1)
 cd py_venv                                                                                 (4-2)
 python3 -m venv py37_pigpio                                                                (4-3)
@@ -615,17 +615,19 @@ pip install -r ~/work/py_venv/requirements_pigpio.txt                           
 deactivate                                                                                 (4-7)
 cd ~/
 
-# (5) Create SQLite Database file
 # load PATH_WEATHER_DB
 . ~/work/add_env_in_bashrc.txt                                                             (5)
 # Create weather database and tables by SQLite3
 echo "Database file: $PATH_WEATHER_DB"
 sqlite3 $PATH_WEATHER_DB < ~/db/weather_db.sql                                             (6)
 
-# (6) Enable pigpiod.service
-echo $my_passwd | sudo --stdin systemctl enable pigpiod.service                            (7)
+# cron: remove application logs every days
+echo $my_passwd | sudo --stdin cp ~/work/crontab/pi /var/spool/cron/crontabs/              (7)
 
-# (7) Enable application services                                                          (8)
+# Enable pigpiod.service
+echo $my_passwd | sudo --stdin systemctl enable pigpiod.service                            (8)
+
+# Enable application services                                                              (9)
 echo $my_passwd | { sudo --stdin cp ~/work/etc/default/switch-to-poweroff /etc/default
   sudo cp ~/work/etc/default/udp-weather-mon /etc/default
   sudo cp ~/work/etc/systemd/system/switch-to-poweroff.service /etc/systemd/system
