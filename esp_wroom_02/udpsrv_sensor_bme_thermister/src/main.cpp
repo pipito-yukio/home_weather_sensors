@@ -12,12 +12,11 @@
 const int32_t SLEEP_T = 600 * 1000000; // micro second, 600 sec (10 minute)
 
 // Wi-Fi section
-const char *SSID = "elecom2g-27cbd9";
-const char *PASS = "hue7nfii7mee";
+const char *SSID = "tlecomxg-abcdef";
+const char *PASS = "12345filemee";
 const IPAddress IP_DEVICE = IPAddress(192, 168, 0, 31);
 const IPAddress IP_GATEWAY = IPAddress(192, 168, 0, 1);
 const IPAddress IP_NETMASK = IPAddress(255, 255, 255, 0);
-const IPAddress IP_PRIMARY_DNS = IPAddress(xxx, xxx, xxx, xxx);
 // UDP section
 const char *SENDTO = "192.168.0.255"; // BroadCast
 const char *DEVICE = "esp8266_1,";
@@ -170,7 +169,7 @@ void setup() {
   }
 
   WiFi.mode(WIFI_STA);                            // Wi-Fi Station
-  WiFi.config(IP_DEVICE, IP_GATEWAY, IP_NETMASK, IP_PRIMARY_DNS);
+  WiFi.config(IP_DEVICE, IP_GATEWAY, IP_NETMASK);
   WiFi.begin(SSID, PASS);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
     Serial.println("Connection Failed! Rebooting...");
