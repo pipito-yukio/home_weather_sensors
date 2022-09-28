@@ -65,6 +65,13 @@
 </div>
 <br/>
 
+* Amazonで購入した中国製の7セグ4桁LED(コロン付き HT16K33互換)モジュールに測定時刻を表示するよう改造。  
+
+<div style="text-align:center;">
+<img src="images/WeatherDataDisplay_20220927_org.jpg">
+</div>
+<br/>
+
 
 ### 1-3. 気象データCSVダウンロード (flask web アプリケーション)
 
