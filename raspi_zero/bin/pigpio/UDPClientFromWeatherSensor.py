@@ -14,6 +14,7 @@ import util.file_util as FU
 from mail.gmail_sender import GMailer
 from lib.ht16k33 import Brightness, BUS_NUM
 from lib.led4digit7seg import LED4digit7Seg, LEDCommon, LEDNumber
+from lib.timeled7seg import LEDTime
 from log import logsetting
 
 """
@@ -47,7 +48,8 @@ base_dir = os.path.abspath(os.path.dirname(__file__))
 # args option default
 BRIGHTNESS_PIN = 17
 WEATHER_UDP_PORT = 2222
-I2C_ADDRESS = 0x70
+DATA_I2C_ADDRESS = 0x71
+TIME_I2C_ADDRESS = 0x70
 
 BUFF_SIZE = 1024
 # UDP packet receive timeout 12 minutes
@@ -57,7 +59,10 @@ MAIL_SUBJECT = "Weather sensor UDP packet is delayed."
 
 # Global instance
 pi = None
+# first HT16K33 driver for measurement data display LEDs
 led_driver = None
+# Second HT16K33 driver for mesurement time display LED
+time_led_driver = None
 udp_client = None
 # Global flag
 led_available = False
@@ -181,7 +186,10 @@ def change_brightness(gpio_pin, level, tick):
     next_brightness = NextBrightness[curr_brightness]
     if curr_brightness != next_brightness:
         curr_brightness = next_brightness
+        # data EDs
         led_driver.set_brightness(next_brightness)
+        # time LED
+        time_led_driver.set_brightness(next_brightness)
 
 
 def setup_gpio():
@@ -228,11 +236,14 @@ def cleanup():
         # Check i2c connect.
         if not has_led_i2c_error:
             led_driver.cleanup()
+    if time_led_driver is not None:
+        if not has_led_i2c_error:
+            time_led_driver.cleanup()
     pi.stop()
     udp_client.close()
 
 
-def led_standby():
+def data_led_standby():
     """ Initialize all LEDs to '----' """
     led_driver.printOutOfRange(led_num=LEDNumber.N1)
     led_driver.printOutOfRange(led_num=LEDNumber.N2)
@@ -298,7 +309,7 @@ def valid_pressure(val):
     return True
 
 
-def output_led(temp_out, temp_in, humid, pressure):
+def output_data_leds(temp_out, temp_in, humid, pressure):
     """
     Output measurement values to LED.
     :param temp_out: Outer temperature value
@@ -373,7 +384,7 @@ def loop(client):
                     delayed_now = now.strftime('%Y-%m-%d %H:%M')
                     content = content_template.format(delayed_now)
                     mail_thread = threading.Thread(target=send_mail, args=(subject, content, recipients,))
-                    logger.info("Mail Thread start.")
+                    logger.warning("Mail Thread start.")
                     mail_thread.start()
                 delayed_mail_sent = True
             continue
@@ -399,7 +410,10 @@ def loop(client):
         # output 4Digit7SegLED
         if led_available:
             try:
-                output_led(record[1], record[2], record[3], record[4])
+                # measurement time display LED: from Unix Timestamp
+                time_led_driver.printTime(unix_tmstmp)
+                # data LED(4 unit)
+                output_data_leds(record[1], record[2], record[3], record[4])
             except Exception as i2c_err:
                 has_led_i2c_error = True
                 logger.warning(i2c_err)
@@ -455,13 +469,32 @@ if __name__ == '__main__':
     udp_client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp_client.bind(broad_address)
     # HT16k33 connection check
-    led_available = has_i2cdevice(I2C_ADDRESS)
+    led_available = has_i2cdevice(DATA_I2C_ADDRESS)
     # LED for displaying measurement data
     if led_available:
         curr_brightness = Brightness.HIGH
-        led_driver = LED4digit7Seg(pi, I2C_ADDRESS, common=LEDCommon.CATHODE, brightness=curr_brightness, logger=None)
+        # measurement data display LEDs
+        led_driver = LED4digit7Seg(
+            pi,
+            DATA_I2C_ADDRESS,
+            common=LEDCommon.CATHODE,
+            brightness=curr_brightness,
+            logger=None
+        )
         led_driver.clear_memory()
-        led_standby()
+        # measurement time(packet received) display LED
+        time_led_driver = LEDTime(
+            pi,
+            TIME_I2C_ADDRESS,
+            brightness=curr_brightness,
+            logger=None
+        )
+        time_led_driver.clear_memory()
+        # スタンバイ表示
+        # 測定値表示LEDs
+        data_led_standby()
+        # 時刻表示LDE
+        time_led_driver.printStandby()
         # GPIO pin setting for brightness adjustment
         setup_gpio()
     try:
