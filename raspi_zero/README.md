@@ -672,7 +672,8 @@ class LEDTime(HT16K33):
          文字列化した気象データの形式: "デバイスID, 外気温, 室内気温, 室内湿度, 室内気圧"
    (6-4) 文字列化した気象データを分解して配列データにセット
         配列データ ["デバイスID", "外気温", "室内気温", "室内湿度", "室内気圧"]
-   (6-5) 最初のデバイスIDを除いた配列データをLED出力関数に設定する
+   (6-5.A) 最初のデバイスIDを除いた配列データをLED出力関数に設定する
+   (6-5.B) バケット到着時刻をデータの測定時刻とし、時刻表示LEDに出力する
 (7) アプリケーションメイン処理
    (7-1) UDPソケットクライアントインスタンス生成
    (7-2) (7-1)インスタンスにブロードキャストアドレス(引数[--udp-port]から取得)をバインドする
@@ -897,9 +898,9 @@ def loop(client):                                               (6)
         if led_available:
             try:
                 # measurement time display LED: from Unix Timestamp
-                time_led_driver.printTime(unix_tmstmp)
+                time_led_driver.printTime(unix_tmstmp)                    # (6-5.B)
                 # data LED(4 unit)
-                output_led(record[1], record[2], record[3], record[4])    # (6-5)
+                output_led(record[1], record[2], record[3], record[4])    # (6-5.A)
             except Exception as i2c_err:
                 has_led_i2c_error = True
                 logger.warning(i2c_err)
