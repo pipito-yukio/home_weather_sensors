@@ -650,8 +650,10 @@ class LEDTime(HT16K33):
 
 ```
 (1) グローバル定義
-   (1-1) LED4digit7Segインスタンス変数
-   (1-1) 明暗切替えボタン用の循環Dict(明->中->低->暗->明..[循環])
+   (1-1.A) LED4digit7Seg インスタンス変数
+   (1-1.B) LEDTime インスタンス変数
+   (1-2) 明暗切替えボタン用コールバック変数
+   (1-3) 明暗切替えボタン用の循環Dict(明->中->低->暗->明..[循環])
 (2) 明暗ボタン押下コールバック
    (2-1) チャタリング防止処理 ※タクトボタン押下時に連続して発生することが多い
    (2-2) LED4digit7Segインスタンスの明度設定メソッドを呼び出す
@@ -675,21 +677,47 @@ class LEDTime(HT16K33):
    (7-1) UDPソケットクライアントインスタンス生成
    (7-2) (7-1)インスタンスにブロードキャストアドレス(引数[--udp-port]から取得)をバインドする
    (7-3) カレントLED明暗変数にデフオルト値[明]を設定
-   (7-4) LED4digit7Segクラスのインスタンス生成
-   (7-5) (7-4)インスタンスの処理化処理実行
-   (7-6) 4個のLEDをスタンバイ状態表示を出力
+   (7-4.A) LED4digit7Segクラスのインスタンス生成
+   (7-4.B) LEDTimeクラスのインスタンス生成
+   (7-5.A) (7-4.A)インスタンスの処理化処理実行
+   (7-5.B) (7-4.B) 同上
+   (7-6.A) 4個のLEDのスタンバイ状態表示を出力 ("----")
+   (7-6.B) 時刻表示LEDのスタンバイ状態表示を出力 ("--:--")
    (7-7) GPIOの初期化処理実行
    (7-8) メインループ処理実行
 ```
 
 * ソースコード [bin/UDPClientFromWeahter.py]  
   ※1 デバックログ出力は除いています  
-  ※2 LED出力に関する処理部分のみ説明します
+  ※2 LED出力に関する処理部分のみ説明します  
+  ※3 **時刻表示LEDの追加と対応する処理コード追加 (2022-10-03)**
 
 ```python
+import argparse
+import logging
+import os
+import pigpio
+import signal
+import socket
+import subprocess
+import threading
+import time
+from datetime import datetime
+from urllib.parse import quote_plus
+import db.weatherdb as wdb
+import util.file_util as FU
+from mail.gmail_sender import GMailer
+from lib.ht16k33 import Brightness, BUS_NUM
+from lib.led4digit7seg import LED4digit7Seg, LEDCommon, LEDNumber
+from lib.timeled7seg import LEDTime
+from log import logsetting
+
 # Global instance
 pi = None
-led_driver = None                                    (1-1)
+# first HT16K33 driver for measurement data display LEDs (1-1.A)
+led_driver = None
+# Second HT16K33 driver for mesurement time display LED  (1-1.B)
+time_led_driver = None
 udp_client = None
 # Global flag
 led_available = False
@@ -718,14 +746,17 @@ def change_brightness(gpio_pin, level, tick):        (2)
     global curr_brightness, prev_tick
     if prev_tick != 0:
         tick_diff = pigpio.tickDiff(prev_tick, tick)
-        if tick_diff < THRESHOLD_DIFF_TICK:               (2-1)
+        if tick_diff < THRESHOLD_DIFF_TICK:               # (2-1)
             return
 
     prev_tick = tick
     next_brightness = NextBrightness[curr_brightness]
     if curr_brightness != next_brightness:
         curr_brightness = next_brightness
-        led_driver.set_brightness(next_brightness)        (2-2)
+        # data EDs
+        led_driver.set_brightness(next_brightness)        # (2-2)
+        # time LED
+        time_led_driver.set_brightness(next_brightness)
 
 
 def setup_gpio():
@@ -739,7 +770,22 @@ def setup_gpio():
     cb_brightness = pi.callback(BRIGHTNESS_PIN, pigpio.RISING_EDGE, change_brightness)   (3)
 
 
-def led_standby():                                         (4-1)
+def cleanup():
+    """ GPIO cleanup, and UDP client close. """
+    if cb_brightness is not None:
+        cb_brightness.cancel()
+    if led_driver is not None:
+        # Check i2c connect.
+        if not has_led_i2c_error:
+            led_driver.cleanup()
+    if time_led_driver is not None:
+        if not has_led_i2c_error:
+            time_led_driver.cleanup()
+    pi.stop()
+    udp_client.close()
+
+
+def data_led_standby():                                         (4-1)
     """ Initialize all LEDs to '----' """
     led_driver.printOutOfRange(led_num=LEDNumber.N1)
     led_driver.printOutOfRange(led_num=LEDNumber.N2)
@@ -814,11 +860,21 @@ def loop(client):                                               (6)
             data, addr = client.recvfrom(BUFF_SIZE)                        (6-2)
         except socket.timeout:
             logger.warning("Socket timeout!")
+            now = datetime.now()
             if delayed_mail_sent is not None:
-                # Notification all LEDs
-                led_notification()
-                # Send Gmail.
-                ... 一部省略 ...
+                if conf_subprocess["playMelody"]["enable"]:
+                    melody_thread = threading.Thread(target=subproc_playmelody)
+                    logger.warning("Subprocess PlayMelody thread start.")
+                    melody_thread.start()
+
+                # Send Gmail: Read every occurence
+                (is_sendmail, subject, content_template, recipients) = mail_config()
+                if is_sendmail:
+                    delayed_now = now.strftime('%Y-%m-%d %H:%M')
+                    content = content_template.format(delayed_now)
+                    mail_thread = threading.Thread(target=send_mail, args=(subject, content, recipients,))
+                    logger.warning("Mail Thread start.")
+                    mail_thread.start()
                 delayed_mail_sent = True
             continue
 
@@ -829,16 +885,39 @@ def loop(client):                                               (6)
         if delayed_mail_sent:
             delayed_mail_sent = False
         # From ESP output: device_name, temp_out, temp_in, humid, pressure
-        line = data.decode("utf-8")                                       (6-3)
-        record = line.split(",")                                          (6-4)
-        # output 4Digit7SegLED
-        if led_available:
-            output_led(record[1], record[2], record[3], record[4])        (6-5)
+        line = data.decode("utf-8")                                       # (6-3)
+        record = line.split(",")                                          # (6-4)
         # Insert weather DB with local time
         # unix_tmstmp = int(time.time())   # time.time() is UTC unix epoch
         local_time = time.localtime()
         unix_tmstmp = time.mktime(local_time)
         wdb.insert(*record, measurement_time=unix_tmstmp, logger=logger)
+
+        # output 4Digit7SegLED
+        if led_available:
+            try:
+                # measurement time display LED: from Unix Timestamp
+                time_led_driver.printTime(unix_tmstmp)
+                # data LED(4 unit)
+                output_led(record[1], record[2], record[3], record[4])    # (6-5)
+            except Exception as i2c_err:
+                has_led_i2c_error = True
+                logger.warning(i2c_err)
+                # Display at onece.
+                if i2c_error_count == 0:
+                    # Show I2C Error at once.
+                    try:
+                        led_show_i2cerror()
+                    except Exception as e:
+                        pass
+                    # Output OLED display
+                    time_now = now.strftime('%H:%M')
+                    display_thread = threading.Thread(target=subproc_displaymessage, args=("i2c-error", time_now,))
+                    logger.warning("Subprocess DisplayMessage thread start.")
+                    display_thread.start()
+                i2c_error_count += 1
+                logger.warning("I2C error count: {} at {}".format(i2c_error_count, time_now))
+
 
 
 if __name__ == '__main__':         (7)
@@ -862,20 +941,39 @@ if __name__ == '__main__':         (7)
     broad_address = ("", args.udp_port)
     logger.info("{}: {}".format(hostname, broad_address))
     # UDP client
-    udp_client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)     (7-1)
-    udp_client.bind(broad_address)                                    (7-2)
+    udp_client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)     # (7-1)
+    udp_client.bind(broad_address)                                    # (7-2)
     # HT16k33 connection check
     led_available = has_i2cdevice(I2C_ADDRESS)
     # LED for displaying measurement data
     if led_available:
-        curr_brightness = Brightness.HIGH                             (7-3)
-        led_driver = LED4digit7Seg(pi, I2C_ADDRESS, common=LEDCommon.CATHODE, brightness=curr_brightness, logger=None)   (7-4)
-        led_driver.clear_memory()                                     (7-5)
-        led_standby()                                                 (7-6)
+        curr_brightness = Brightness.HIGH                             # (7-3)
+        # measurement data display LEDs
+        led_driver = LED4digit7Seg(
+            pi, 
+            I2C_ADDRESS,                                        # スレーブアドレス: 0x71
+            common=LEDCommon.CATHODE, 
+            brightness=curr_brightness, 
+            logger=None
+        )                                                             # (7-4.A)                     
+        led_driver.clear_memory()                                     # (7-5.A)
+        # measurement time(packet received) display LED
+        time_led_driver = LEDTime(
+            pi,
+            TIME_I2C_ADDRESS,                                   # スレーブアドレス: 0x70
+            brightness=curr_brightness,
+            logger=None
+        )                                                            # (7-4.B)
+        time_led_driver.clear_memory()                               # (7-5.B)
+        # スタンバイ表示
+        # 測定値表示LEDs
+        data_led_standby()                                            # (7-6.A)
+        # 時刻表示LDE
+        time_led_driver.printStandby()                                # (7-6.B)
         # GPIO pin setting for brightness adjustment
-        setup_gpio()                                                  (7-7)
+        setup_gpio()                                                  # (7-7)
     try:
-        loop(udp_client)                                              (7-8)
+        loop(udp_client)                                              # (7-8)
     except KeyboardInterrupt:
         pass
     finally:
