@@ -367,7 +367,7 @@ class HT16K33:            (4)
 (13) 測定値エラー出力力メソッド
 ```
 
-* ソース本体 [bin/lib/led4digit7seg.py]
+[bin/lib/led4digit7seg.py]
 
 ```python
 import logging
@@ -614,6 +614,12 @@ class LEDTime(HT16K33):
             datas[i] = self.SEG_CHAR_MAP[tm]
             i += 1
         return datas
+
+    def set_brightness(self, brightness):
+        # 明るすぎるため調整する: 設定する明るさの1/2をマイナス
+        # ※最小値は1でマイナスになることはない
+        brightness -= (brightness // 2)
+        super().set_brightness(brightness)
 
     def printTime(self, unix_tmstmp: int):
         """

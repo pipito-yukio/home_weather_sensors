@@ -42,6 +42,12 @@ class LEDTime(HT16K33):
             i += 1
         return datas
 
+    def set_brightness(self, brightness):
+        # 明るすぎるため調整する: 設定する明るさの1/2をマイナス
+        # ※最小値は1でマイナスになることはない
+        brightness -= (brightness // 2)
+        super().set_brightness(brightness)
+
     def printTime(self, unix_tmstmp: int):
         """
         Unixタイムスタンプからの時刻を表示する
