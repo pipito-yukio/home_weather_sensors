@@ -1,0 +1,29 @@
+.card-img-top,
+.card-img-bottom {
+    height: 300px;
+    /*
+    reference: https: //developer.mozilla.org/ja/docs/Web/CSS/object-fit
+    CSS の object-fit プロパティは、置換要素、例えば <img>や <video>などの中身を、
+    コンテナーにどのようにはめ込むかを設定します。
+    values: [fill | contain | cover | none | scale-down]
+    */
+    object-fit: contain;
+    /*  */
+    margin: 5px;
+    padding: 5px;
+    /* background-color: cornsilk;*/
+}
+
+
+.card-body .card-text-small {
+    font-size: 0.9em;
+    padding: 2px;
+    background-color: lightgray;
+}
+
+.update-date {
+    font-size: 0.85em;
+    text-align: end;
+    text-decoration: underline;
+    margin-bottom: 0.5em;
+}
