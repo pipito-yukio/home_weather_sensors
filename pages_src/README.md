@@ -1,9 +1,9 @@
 ## 気象データ表示板の電子工作あれこれソースコード
 ---
 
-### 0.実行可能機種
+### 0.動作検証済み機種
 
-Raspberry Pi 4, Raspberry Pi WH
+Raspberry Pi WH 
 
 ### 1.実行に必要なシステムライブラリ
 
@@ -54,5 +54,5 @@ $ . py_pigpio/bin/activate
 (py_pigpio) python PrintTimeWith4DigitLED.py
 ```
 
-【気象データ表示板の電子工作あれこれ】コンテンツサイトへはこちら
+【気象データ表示板の電子工作あれこれ】コンテンツサイトへはこちら  
 <https://pipito-yukio.github.io/home_weather_sensors/>
