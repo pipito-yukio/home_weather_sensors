@@ -11,9 +11,57 @@
     <div class="container">
         <h3 class="mt-2 ms-2 me-2 text-center">２つの同一種 i2cデバイス (HT16K33 モジュール)を共存させる</h3>
         <hr/>
-        <div class="update-date">【最終更新日】2022-10-03</div>
-        <div>
-            
+        <div class="update-date">【最終更新日】2022-10-04</div>
+        <p class="indent">既存のHT16K33モジュール(左側)に中国製【0.56インチ LEDディスプレイモジュール 4桁 7セグメント VK16K33 I2C Arduino用】を共存させるにはいずれか一方のデバイスのスレーブアドレスを変更する必要があります。</p>
+        <div class="ms-4 mb-4">
+             <img src="51_multipleHT16K33devices/images/WeatherDataDisplayBeforeTimeModule.jpg">
+        </div>
+        <div class="indent">
+            気象データ表示板に組み込んだHTK1633モジュールは秋月電子の【AE-HT16K33 16x8マトリクスドライバモジュール】。<br/>
+            そして秋月電子からダウンロードした資料(PDF)がこれ。
+        </div>
+        <p class="indent"><b>赤枠で括られた３つの端子の組み合わせでハンダを盛るとスレーブアドレスを0x71〜0x76に変更可能</b>であることを表しています。</p>
+        <div class="ms-4 mb-4">
+             <img src="51_multipleHT16K33devices/images/AE-HT16K33_i2c_address_change.jpg">
+        </div>
+        <p class="indent">気象データ表示板の<b>スレーブアドレスを変更するとすでに運用している制御プログラムを修正する必要があるため避けたかった</b>のですが、中国製モジュールのデータシートが入手できなかったので今回は下記右側のように気象データ表示板のHT61K33モジュールのスレーブアドレスを <b>"0x71"</b> に変更することにしました。</p>
+        <div class="ms-4 mb-4">
+             <img src="51_multipleHT16K33devices/images/MultiHT16K33Deviices.jpg">
+        </div>
+        <p class="indent">実際に中国製7セグ4桁LEDモジュール (コロン付き) を気象データ表示板に組み込み、データの到着時刻(測定時刻)を出力したのがこれ。</p>
+        <div class="ms-4 mb-4">
+             <img src="51_multipleHT16K33devices/images/WeatherDataDisplay_20220927.jpg">
+        </div>
+        <p class="indent">コンソールからi2cデバイスのスレーブアドレスを確認。同種のI2Cデバイスのスレーブアドレスが想定通りに２つ表示されています。</p>
+        <div class="ms-4 mb-4">
+             <img src="51_multipleHT16K33devices/images/i2cdetect_multiHT16k33Devices.jpg">
+        </div>
+        <p class="indent"><b>複数のI2Cデバイスを連結する方法</b>については下記書籍に記載されているのでご覧になってください。</p>
+        <div class="ms-4 mb-4">
+            <pre class="bg-colored p-2">
+電子部品ごとの制御を学べる！
+Ｒａｓｂｅｒｒｙ　Ｐｉ 電子工作　実践講座
+改訂第２版
+[ISBN978-4-8007-1242-4]
+
+【2-5】デジタル通信方式(1) - I2C通信方式 -- 51ページ目</pre>
+            <img src="51_multipleHT16K33devices/images/Book_Raspi_practice.jpg">
+        </div>
+        <div class="m-3">気象データ表示板の製作についてはこちら<br/>
+            <a class="ms-3" href="https://github.com/pipito-yukio/home_weather_sensors/tree/master/raspi_zero">
+                https://github.com/pipito-yukio/home_weather_sensors/tree/master/raspi_zero
+            </a>
+        </div>
+        <div class="m-3 mb-5">気象データ表示板の制御プログラムのソースはこちら<br/>
+            <ul class="list-group">
+                <li class="list-group-item font-small">lib/<b>ht16k33.py</b>: HT16K33 モジュールの制御クラス</li>
+                <li class="list-group-item font-small">lib/<b>led4digit7seg.py</b>: 4つの7セグ4桁LEDの出力を制御するクラス</li>
+                <li class="list-group-item font-small">lib/<b>timeled7seg.py</b>: 時刻の出力を制御するクラス</li>
+                <li class="list-group-item font-small"><b>UDPClientFromWeatherSensor.py</b>: 気象データ表示板の制御プログラム本体</li>
+            </ul>
+            <a class="ms-3" href="https://github.com/pipito-yukio/home_weather_sensors/tree/master/raspi_zero/bin/pigpio">
+                https://github.com/pipito-yukio/home_weather_sensors/tree/master/raspi_zero/bin/pigpio
+            </a>
         </div>
     </div>
 </body>
