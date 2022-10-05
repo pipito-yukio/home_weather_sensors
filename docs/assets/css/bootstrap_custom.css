@@ -27,3 +27,23 @@
     text-decoration: underline;
     margin-bottom: 0.5em;
 }
+
+p.indent,
+div.indent {
+    font-size: 0.95em;
+    text-indent: 1em;
+}
+
+p.half-indent,
+div.half-indent {
+    font-size: 0.95em;
+    text-indent: 0.5em;
+}
+
+.font-small {
+    font-size: 0.9em;
+}
+
+pre.bg-colored {
+    background-color: antiquewhite;
+}
