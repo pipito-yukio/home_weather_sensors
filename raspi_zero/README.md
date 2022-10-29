@@ -1,148 +1,10 @@
-## 1. ラズパイに関する参考書
----
-* ① **Raspbian OS**のインストール、GPIOに関するコンフィグレーションついて詳しい説明があります。  
-※1 **2022年時点の最新は Rasberry Pi OS** ですが特に問題になることはありませんでした。  
-※2 参考にしたのは項目は以下の通り  
-  * コンフィグレーション【Chapter 3-2】
-  * ネットワークの接続設定【3-3】  
-* ②ラズパイを使った電子工作で実践的な内容になっいます。  
-※ 参考にしたのは項目は以下の通り  
-  * Capter 8 【表示をLEDマトリクスドライバモジュールに任せる】の回路  
-    ※1 GPIO制御のPythonライブラリとして **wiringpi を使用しているが、このライブラリは現在Deprecated**となっているため実装は参考としなかった。  
-    ※2 本システムではGPIO制御のPythonライブラリとして**pigpio**を採用しています。
-* ③ 表紙に「ラズパイで入門！」となっていますが**中級者向け**の内容です。  
-  ※1 ユニバーサル基板への回路と発展させていくともっとハード的にコアな知識が必要になります。
-  ※2 ほぼＣ言語によるプログラムとなっていますがロジックはPythonでも参考になります。  
-  ※3 この書籍の出版日は古く ターゲットは **ラズベリー・パイ 3 Model B となっているので注意が必要です。**
-* ④ 電子回路の基礎からセンサーデータの活用まで体系的によくまとめられておりIOTの教科書としておすすめです。  
-   ※1 但し、残念な点はそれぞれ価格が高価な無線モジュールXBee、無線マイコンモジュールTWELITEを採用していることです。  
-   ※2 当システムでは無線マイコンモジュールとして格安のESP-WROOM-02を採用しています。
-* ⑤ マイコン、ラズパイOSなどがなくとも**単独で動作する電子回路**について数多く掲載されています。  
-  ※ 参考にしたのは項目は以下の通り
-  * 電源シャットダウン時の点滅回路
-  * メロディースピーカー回路
-
-<div>
-<img src="images/books/Books_RaspiBooks.jpg">
-</div>
-<br/>
-
-## 2. 気象データ表示板の製作
----
-### 2-1. LEDマトリクスドライバモジュールを使って4桁7セグLEDに数字を出力する方法
-
-* HT16K33モジュール + I2Cバス双方向電圧レベル変換モジュール + 4桁7セグLED (1個)
-* 書籍②の Capter 8 【表示をLEDマトリクスドライバモジュールに任せる】をブレッドボード上に配線。  
-※1. 掲載のPythonプログラムは現在 **Deprecated になっている wiingpiライブラリ**を使っているため参考にしませんでした。  
-※2. Pythonプログラムは**pigpioライブラリを使い下記サイトのサンプロソース**を参考に作成しました。  
-<https://abyz.me.uk/rpi/pigpio/python.html>
-
-<div>
-<img src="images/displayWeatherSensor/BreadBoard_7SegWithHT16K33_01_1LED.jpg">
-</div>
-<br/>
-
-### 2-2-1. HT16K33モジュール使って4個の4桁7セグLEDに同時にデータを出力する方法
-
-* (1) 4個の4桁7セグLEDに同時に出力する配線方法は下記のように並列に接続することです。
-
-<div>
-<img src="images/displayWeatherSensor/LayoutParallel_7seg4digitLED.jpg">
-</div>
-<br/>
-
-* (2) HT16K33モジュールのデータシートを参考に4個の4桁7セグLEDに関連付けた一覧表です。  
-※ カソードコモンで4個、アノードコモンで2個の4桁7セグLEDに出力することができます。
-
-<div>
-<img src="images/displayWeatherSensor/4Digit7Seg_tables_parts.jpg">
-</div>
-<br/>
-
-### 2-2-2. 気象データ表示板の背面配線図
-
-* 手書きでも背面配線図があるとハンダ付け作業がスムーズに進みます。
-
-<div>
-<img src="images/displayWeatherSensor/LayoutDesign_backview.jpg">
-</div>
-<br/>
-
-### 2-3. ブレッドボード上での検証作業
-
-* 写真で見ての通り配線は相当大変な作業でした。※二度とやる気にはなりません。
-
-<div>
-<img src="images/displayWeatherSensor/BreadBoard_7SegWithHT16K33_03_4LED.jpg">
-</div>
-<br/>
-
-### 2-4. ユニバーサル基板への配置 (試作) とハンダ付け
-
-* 4桁7セグLEDは電流制限抵抗が上下に必要なため1個当たりの表面幅がLED幅の倍近くになります。  
-※気象データ表示板は４個の4桁7セグLEDを縦に配置する想定としていたので制限抵抗を写真のように配置する方法では厳しい。
-
-<div>
-<img src="images/displayWeatherSensor/Trial_4Digit7SegBoard_WithHT16K33.jpg">
-</div>
-<br/>
-
-### 2-5. 4桁7セグメントLED 簡易化基板を使う
-
-* スイッチサイエンスに下記のような基板があるとこがわかり早速ためしてみました。
-
-<div>
-<img src="images/displayWeatherSensor/Parts_4digit_7seg LED circuit board_1.jpg">
-</div>
-<br/>
-
-* 見ての通り電流制限抵抗がチップ抵抗になっています。初心者の私にとってハンダ付けは結構大変でした。  
-
-<div>
-<img src="images/displayWeatherSensor/Parts_4digit_7seg LED circuit board_2.jpg">
-</div>
-<br/>
-
-* 4桁7セグLEDを**かぶせる向きに注意する必要が有ります。** 私は誤って右の(NG)ように配置してしまいました。  
-※ 左のようにかぶせるため一度ハンダ付けした後に接続不良が見つかると修理が大変です。
-
-<div>
-<img src="images/displayWeatherSensor/Parts_4digit_7seg LED circuit board_5_setting_OK_NG.jpg">
-</div>
-<br/>
-
-* かぶせる前にハンダ付けした抵抗をテスターでチェックすることが必要です。
-
-<div>
-<img src="images/displayWeatherSensor/Parts_4digit_7seg LED circuit board_4_check.jpg">
-</div>
-<br/>
-
-### 2-6. 完成
-
-* 簡易キットを採用したことによりユニバーサル基板上にスッキリと配置することできました。  
-※ 4桁7ゼクLEDモジュールが出っ張っているのでちょっと気になってはいますが。
-
-<div>
-<img src="images/displayWeatherSensor/DisplayWeatherSensor_01.jpg" width="800">
-</div>
-<br/>
-
-
-* 【背面】並列接続のためLEDマトリクスドライバモジュール周辺のハンダ付けが込み入っています。
-
-<div>
-<img src="images/displayWeatherSensor/DisplayWeatherSensor_14_Backface.jpg" width="800">
-</div>
-<br/>
-
-## 3. Pythonプログラミング
+## 1. Pythonプログラミング
 
 * もともとプラグラマー歴 (Java) ２０年以上なのでLEDへの出力プログラムは全てスクラッチで作りました。  
 * 4桁7セグLEDの明るさは、明暗切替ボタンで4段階に切り替えするようにしています。  
 ※HT16K33モジュールは16段階まで替えることができますが、人間の目では4段階で十分です。
 
-### 3-1. HT16K33モジュールのライブラリ作成
+### 1-1. HT16K33モジュールのライブラリ作成
 
 * ライブラリを作るには【HT16K33モジュールの仕様書】を読んで理解することが必要です。  
 ※ひとまずクラスで必要な部分に絞って抜粋します
@@ -283,7 +145,7 @@ class HT16K33:            (4)
         self.pi.i2c_write_byte(self.i2c_handle, (BRIGHTNESS_BASE | brightness))
 ```
 
-### 3-2 (A). 4桁7セグLED出力ライブラリ作成
+### 1-2 (A). 4桁7セグLED出力ライブラリ作成
 
 * [1] 7セグメントLEDへの出力文字[0〜9, -, E]に対応する16進表現一覧
 
@@ -560,7 +422,7 @@ class LED4digit7Seg(HT16K33):                                                  (
         self.send_data(stareg, self.SEG_ERRORS)
 ```
 
-### 3-2 (B). 時刻出力ライブラリ作成
+### 1-2 (B). 時刻出力ライブラリ作成
 
 時刻の出力は５桁固定なので出力処理は非常に簡単になります。
 ```  
@@ -643,7 +505,7 @@ class LEDTime(HT16K33):
 ```
 
 
-### 3-3. UDPパケット(気象データ)モニターアプリ
+### 1-3. UDPパケット(気象データ)モニターアプリ
 
 * アプリケーションメイン  
   ※4桁7セグLED出力処理部分に限定して説明します。
