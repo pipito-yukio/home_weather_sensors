@@ -28,10 +28,18 @@
     margin-bottom: 0.5em;
 }
 
+p.child-indent,
+div.child-indent {
+    font-size: 0.90em;
+    text-indent: 1.5em;
+    width: 100%;
+}
+
 p.indent,
 div.indent {
     font-size: 0.95em;
     text-indent: 1em;
+    width: 100%;
 }
 
 p.half-indent,
@@ -46,4 +54,13 @@ div.half-indent {
 
 pre.bg-colored {
     background-color: antiquewhite;
+}
+
+.v-line-start {
+    border-left: thick solid deepskyblue;
+    padding-left: 10px;
+}
+
+ul>li.mark-square {
+    list-style-type: square;
 }
