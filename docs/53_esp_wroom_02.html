@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="assets/css/bootstrap_custom.css">
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/highlight/styles/default.min.css">
+    <title>ESP-WROOM-02 DIP化キットを使った気象センサーモジュール</title>
+</head>
+
+<body>
+    <div class="container" style="max-width: 800px;">
+        <h4 class="mt-2 ms-2 me-2 text-center">ESP-WROOM-02 DIP化キットを使った気象センサーモジュール</h3>
+            <hr />
+            <div class="update-date">【最終更新日】2022-11-01</div>
+
+            <h5 class="v-line-start">1. ESP-WROOM-02 の参考書</h5>
+            <figure class="figure ms-4">
+                <figcaption class="figure-caption text-center">気象センサーモジュール (ESP-WROOM-02) の制作と制御プログラミングで参考にした書籍
+                </figcaption>
+                <img class="figure-img img-fluid" src="53_esp_wroom_02/images/Books_ESP_Books.jpg" width="700px">
+            </figure>
+            <div class="ms-3 mb-4">
+                <p>引用箇所と書籍名</p>
+                <figure>
+                    <blockquote class="small" cite="urn:isbn:978-4-7898-4704-9">
+                        <ul class="mark-square">
+                            <li>
+                                第１章 1 ESPスタータ・キット×ブレッドボードで作るＩｏＴ実験ポード<br>
+                                ブレッドボードを使って実験用ボードを制作する
+                            </li>
+                            <li>
+                                Appendix 2 いつまでも動く無人ＩｏＴを作る！ ESPマイコンのケチケチ運転術<br>
+                                スタンバイ電流の小さい電源ICで間欠運転！ 6か月連続動作
+                            </li>
+                        </ul>
+                    </blockquote>
+                    <figcaption class="blockquote-footer">
+                        ①-A <cite>超特急Web接続! ESPマイコン・プログラム全集 [ CQ出版社 ]</cite>
+                    </figcaption>
+                </figure>
+                <figure>
+                    <blockquote class="small" cite="urn:isbn:978-4-7898-4704-9">
+                        ESP-WROOM-02(ESP8266) モジュール実験用ボード (基本ボードＡ)<br>
+                        4-5 ケチケチ運転術・基本ボード (B)
+                    </blockquote>
+                    <figcaption class="blockquote-footer">
+                        ①-B <cite>超特急Web接続! ESPマイコン・プログラム全集 記事を試せる新人教育用<br>
+                            ＩｏＴ実習キット組み立て説明書
+                        </cite>
+                    </figcaption>
+                </figure>
+                <figure>
+                    <blockquote class="small" cite="urn:isbn:978-4-8007-1242-4">
+                        第４章 より実用的なセンサ端末を作る<br>
+                        低消費電力な端末を開発する
+                    </blockquote>
+                    <figcaption class="blockquote-footer">
+                        ③ <cite>ＩｏＴ開発スタートブック ESP32でクラウドにつなげる 電子工作を始めよう！ [技術評論社]
+                        </cite>
+                    </figcaption>
+                </figure>
+            </div>
+            <div class="mt-1 mb-4 p-2" style="background-color:antiquewhite">
+                <ul class="small">
+                    <li>①-A 基本的にはこの本のソースコードを参考にプログラムを作成</li>
+                    <li>①-B 上記書籍の最新の配線が記載されたPDFドキュメント <br>
+                        ※ ①-Aの著者サポートページからダウンロード<br>
+                    </li>
+                    <li>② この本の実装はESP-WROOM-32用なのでそのままではESP-WROOM-02では使えないので間欠運転のロジックを借用。</li>
+                </ul>
+            </div>
+
+            <h5 class="v-line-start">2. 書き込み用の開発ボード (A) の製作</h5>
+            <div class="ms-4">
+                <h6>2-1. PDF文書 ①-Bを元にブレッドボード上に書き込み用の回路を組み立てる</h6>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">ブレッドボード上の開発ボード (A) </figcaption>
+                    <img class="figure-img img-fluid"
+                        src="53_esp_wroom_02/images/weatherSensor/EspWroom02_0_DevBreadBoard-A.jpg">
+                </figure>
+                <h6>2-2. 開発ボード (A) をユニバーサル基板にハンダ付けする</h6>
+                <p class="indent small">
+                    ブレッドボードで組んだ回路では、書き込み作業中に部品・配線が外れてしまい途中で書き込みに失敗することがあります。
+                    恒常的に使う場合は下記のようにユニバーサル基板に回路をハンダ付けしたほうが良いでしょう。
+                </p>
+                <p class="indent small">
+                    さらに3.3Vの出力電源、I2Cポート、SPIポートをボードの下左端にまとめたので実験作業の使い勝手が向上しました。
+                </p>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">ユニバーサル基板に回路をハンダ付けした開発ボード (A)</figcaption>
+                    <img class="figure-img img-fluid"
+                        src="53_esp_wroom_02/images/weatherSensor/EspWroom02_1_DevBoard-A_085.jpg" width="700px">
+                </figure>
+            </div>
+
+            <h5 class="v-line-start">3. 気象センサーモジュール(ESP-WROOM-02) の製作</h5>
+            <div class="ms-4">
+                <h6>3-1. ケチケチ運転術・基本ボード (B) の製作</h6>
+                <p class="indent small">
+                    ブレッドボード上に<b>テスト用のWi-Fi通信機能プログラムの書き込みが終わったESP-WROOM-02 DIP化キット</b>と安定化電源を配置し、
+                    乾電池を繫いでWi-Fi通信機能が正しく動作するか確認します。
+                </p>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">ESP-WROOM-02 DIP化キット + 安定化電源 + 乾電池 (1.5V x 3本=4.5V)
+                    </figcaption>
+                    <img class="figure-img img-fluid"
+                        src="53_esp_wroom_02/images/weatherSensor/EspWroom02_2_BreadBoard-B.jpg" width="440px">
+                </figure>
+                <h6>3-2. 気象センサーモジュールの組み立て</h6>
+                <p class="indent small">
+                    上記の 3-1 に加えセンサーモジュールの部品を配置し、実際にセンサーから取得したデータがWi-Fi経由でUDPパケットとして発信することを確認します。
+                </p>
+                <ul>
+                    <li style="list-style-type: none;">【使用部品】</li>
+                    <ul class="marker-square small">
+                        <li>ESP-WROOM-02 DIP化キット</li>
+                        <li>レギュレータ (3.3V 500mA) + コンデンサー + 抵抗</li>
+                        <li>アナログコンバータ (MCP3002)</li>
+                        <li>気象センサー BME280 (気温・湿度・大気圧)</li>
+                        <li>外気温測定用のサーミスタ用ソケット</li>
+                        <li>片面ガラス・ユニバーサル基板（ブレッドボード配線パターンタイプ）</li>
+                    </ul>
+                </ul>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">ブレッドボード上のセンサーモジュールとユニバーサル基板</figcaption>
+                    <img class="figure-img img-fluid"
+                        src="53_esp_wroom_02/images/weatherSensor/EspWroom02_2_SensorModule_01.jpg">
+                </figure>
+                <p class="indent small">
+                    ブレッドボードと同じ配線パターンのユニバーサル基板を使用したので、ブレッドボード上の配線を見ながらハンダ付けできます。
+                </p>
+                <h6>3-3. 電池モジュールと気象センサーモジュールの配線状況</h6>
+                <ul>
+                    <li style="list-style-type: none;">【電池モジュール】</li>
+                    <ul class="marker-square small">
+                        <li>リチウムイオン電池 (1.2v) x 4本 = 4.8v</li>
+                        <li>電池ボックス 単3 x 4本 リード線</li>
+                    </ul>
+                </ul>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">電池モジュールとセンサージュール (背面) のハンダ付け状況</figcaption>
+                    <img class="figure-img img-fluid"
+                        src="53_esp_wroom_02/images/weatherSensor/EspWroom02_2_SensorModule_02.jpg">
+                </figure>
+                <h6>3-4. 完成した気象センサーモジュール</h6>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">気象センサーモジュールとラズパイをシリアル接続</figcaption>
+                    <img class="figure-img img-fluid"
+                        src="53_esp_wroom_02/images/weatherSensor/EspWroom02_2_SensorModule_03.jpg">
+                </figure>
+                <h6>3-5. 気象センサーモジュールの動作確認</h6>
+                <p class="indent small">
+                    ラズパイ側で気象センサーモジュールの動作を確認する (ESP-WROOM-02モジュールのシリアルログを出力)
+                </p>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">センサーデータの取得と間欠運転 (Deep Sleep) が正常に動作していることを確認しているところ
+                    </figcaption>
+                    <img class="figure-img img-fluid"
+                        src="53_esp_wroom_02/images/weatherSensor/RaspiSerial_espWroom02_sensor.jpg">
+                </figure>
+            </div>
+
+            <div class="m-3 mb-5 small">
+                <p class="indent small">ソースコードは下記リポジトリ【ラズベリーパイによる家庭用気象データ監視システム】へ</p>
+                <a class="ms-4" href="https://github.com/pipito-yukio/home_weather_sensors/tree/master/esp_wroom_02">
+                    https://github.com/pipito-yukio/home_weather_sensors/tree/master/esp_wroom_02
+                </a>
+            </div>
+    </div>
+</body>
+
+</html>
