@@ -61,6 +61,6 @@ pre.bg-colored {
     padding-left: 10px;
 }
 
-ul>li.mark-square {
+ul.marker-square>li {
     list-style-type: square;
 }
