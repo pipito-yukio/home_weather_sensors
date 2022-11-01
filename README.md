@@ -100,7 +100,7 @@
 * センサーから取得したデータを**10分間隔でUDPパケットとして**内部ネットワーク宛にブロードキャストする
 * ブロードキャスト後**ディープスリープモードに移行する ※間欠運転**
 
-  [**>>> 気象センサーモジュール (ESP-WROOM-02) の製作<<<** ページへ](esp_wroom_02/README.md#2-気象センサーモジュール-esp-wroom-02)
+  [**>>> 気象センサーモジュール (ESP-WROOM-02) の製作 <<<** ページへ](https://pipito-yukio.github.io/home_weather_sensors/53_esp_wroom_02.html)
 
 
 ### 2-2. 気象データ表示板
@@ -117,7 +117,7 @@
 * 電源OFFボタンによるラズパイのシャットダウン
   * シャットダウンスクリプトをシステムサービスに登録
 
-  [**>>> 気象データ表示板 の製作 <<<** ページへ](https://pipito-yukio.github.io/home_weather_sensors/)
+  [**>>> 気象データ表示板 の製作 <<<** ページへ](https://pipito-yukio.github.io/home_weather_sensors/52_displayWeatherDataBoard.html)
 
 ### 2-3. 気象データCSVダウンロード
 
