@@ -12,12 +12,12 @@
 
 <body>
     <div class="container" style="max-width: 800px;">
-        <h4 class="mt-2 ms-2 me-2 text-center">HT16K33モジュールで4個の7セグ4桁LEDに数値を出力する</h3>
+        <h4 class="m-2 text-center">HT16K33モジュールで4個の7セグ4桁LEDに数値を出力する</h3>
             <hr />
             <div class="update-date">【最終更新日】2022-10-29</div>
 
             <h5 class="v-line-start">1. ラズベリーパイと電子工作の参考書</h5>
-            <figure class="figure">
+            <figure class="figure ms-4">
                 <figcaption class="figure-caption text-center">気象データ表示板を制作する際に参考にした書籍</figcaption>
                 <img class="figure-img img-fluid" src="52_displayWeatherDataBoard/images/Books_Raspi.jpg">
             </figure>
@@ -92,7 +92,7 @@
                         </li>
                     </ul>
                 </div>
-                <figure class="figure">
+                <figure class="figure ms-4">
                     <figcaption class="figure-caption text-center">ブレッドボード上でHT16K33モジュールと1個の7セグ4桁LEDを組み立てたところ
                     </figcaption>
                     <img class="figure-img img-fluid"
@@ -101,15 +101,16 @@
 
                 <h6>2-2. HT16K33モジュール使って4個の4桁7セグLEDに同時にデータを出力する方法</h6>
                 <p class="h6 indent">2-2-1. 4個の4桁7セグLEDを下記図のように並列に接続する</p>
-                <figure class="figure">
+                <figure class="figure ms-4">
                     <figcaption class="figure-caption text-center">4個の4桁7セグLEDの並列接続概念図</figcaption>
                     <img class="figure-img img-fluid"
                         src="52_displayWeatherDataBoard/images/displayWeatherSensor/LayoutParallel_7seg4digitLED.jpg">
                 </figure>
 
                 <p class="h6 indent">2-2-2. HT16K33モジュールのデータシートから接続ピンの一覧表を作成する</p>
-                <figure class="figure">
-                    <figcaption class="figure-caption text-center">HT16K33モジュールのデータシートを参考に4個の4桁7セグLEDにPin名を関連付けた表
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">
+                        HT16K33モジュールのデータシートを参考に4個の4桁7セグLEDにPin名を関連付けた表
                     </figcaption>
                     <img class="figure-img img-fluid"
                         src="52_displayWeatherDataBoard/images/displayWeatherSensor/4Digit7Seg_tables_parts.jpg">
@@ -117,7 +118,7 @@
 
                 <p class="h6 indent">2-2-3. 気象データ表示板の背面配線図を作成する</p>
                 <p class="child-indent">初心者の方は背面配線図があるとハンダ付け作業がスムーズに進みます</p>
-                <figure class="figure">
+                <figure class="figure ms-4">
                     <figcaption class="figure-caption text-center">&lt;&lt背面配線図&gt;&gt;</figcaption>
                     <img class="figure-img img-fluid"
                         src="52_displayWeatherDataBoard/images/displayWeatherSensor/LayoutDesign_backview.jpg">
@@ -125,8 +126,9 @@
 
                 <h6>2-3. ブレッドボード上で検証</h6>
                 <p class="indent">部品への配線が正しく動作することをブレッドボードを使って予め検証する必要が有ります。</p>
-                <figure class="figure">
-                    <figcaption class="figure-caption text-center">HT16K33モジュールと4個の4桁7セグLEDを並列に接続</figcaption>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">HT16K33モジュールと4個の4桁7セグLEDを並列に接続
+                    </figcaption>
                     <img class="figure-img img-fluid"
                         src="52_displayWeatherDataBoard/images/displayWeatherSensor/BreadBoard_7SegWithHT16K33_03_4LED.jpg"
                         width="550">
@@ -140,8 +142,9 @@
                 <p class="indent font-small">
                     下記画像で見ての通り<b>4桁7セグLEDは電流制限抵抗が上下に必要なため</b>、4桁7セグLEDを4個縦に並べるように作る想定だとハンダ付けが相当大変になることが想像されます。
                 </p>
-                <figure class="figure">
-                    <figcaption class="figure-caption text-center">試作版の小さなユニバーサル基板 (138x95mm と 95x72mm)</figcaption>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">試作版の小さなユニバーサル基板 (138x95mm と
+                        95x72mm)</figcaption>
                     <img class="figure-img img-fluid"
                         src="52_displayWeatherDataBoard/images/displayWeatherSensor/Trial_4Digit7SegBoard_WithHT16K33.jpg"
                         width="700">
@@ -149,27 +152,31 @@
 
                 <h6>2-5. 4桁7セグメントLED 簡易化基板を使う</h6>
                 <p class="indent small">下記基板をスイッチサイエンスで見つけ早速購入し試してみました。</p>
-                <figure class="figure">
-                    <figcaption class="figure-caption text-center">1袋に基板が5枚と表面実装の抵抗が5組分<b>(+α)</b> が入っています
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">
+                        1袋に基板が5枚と表面実装の抵抗が5組分<b>(+α)</b> が入っています
                     </figcaption>
                     <img class="figure-img img-fluid"
                         src="52_displayWeatherDataBoard/images/displayWeatherSensor/Parts_4digit_7segLED_circuit_board_1.jpg"
                         width="700">
                 </figure>
-                <figure class="figure">
-                    <figcaption class="figure-caption text-center">電流制限抵抗がチップ抵抗になっています</figcaption>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">電流制限抵抗がチップ抵抗になっています
+                    </figcaption>
                     <img class="figure-img img-fluid"
                         src="52_displayWeatherDataBoard/images/displayWeatherSensor/Parts_4digit_7segLED_circuit_board_2.jpg"
                         width="700">
                 </figure>
-                <figure class="figure">
-                    <figcaption class="figure-caption text-center">基板を被せる向きに注意します</figcaption>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">基板を被せる向きに注意します
+                    </figcaption>
                     <img class="figure-img img-fluid"
                         src="52_displayWeatherDataBoard/images/displayWeatherSensor/Parts_4digit_7segLED_circuit_board_3_setting_OK_NG.jpg"
                         width="400">
                 </figure>
-                <figure class="figure">
-                    <figcaption class="figure-caption text-center">予めはんだ付けした抵抗値を測定します</figcaption>
+                <figure class="figure ms-4">
+                    <figcaption class="figure-caption text-center">
+                        予めはんだ付けした抵抗値を測定します</figcaption>
                     <img class="figure-img img-fluid"
                         src="52_displayWeatherDataBoard/images/displayWeatherSensor/Parts_4digit_7segLED_circuit_board_4_check.jpg"
                         width="400">
@@ -178,13 +185,13 @@
 
             <h6>2-6. 完成</h6>
             <p class="indent small">簡易キットを採用したことによりユニバーサル基板上にスッキリと配置することできました。</p>
-            <figure class="figure">
+            <figure class="figure ms-4">
                 <figcaption class="figure-caption text-center">完成した気象データ表示板に気象データを出力</figcaption>
                 <img class="figure-img img-fluid" src="52_displayWeatherDataBoard/images/DisplayWeatherSensor.jpg"
                     width="550">
             </figure>
             <p class="indent small">並列接続のためLEDマトリクスドライバモジュール周辺のハンダ付けがかなり込み入っています。</p>
-            <figure class="figure">
+            <figure class="figure ms-4">
                 <figcaption class="figure-caption text-center">背面の配線状況</figcaption>
                 <img class="figure-img img-fluid"
                     src="52_displayWeatherDataBoard/images/displayWeatherSensor/DisplayWeatherSensor_Backface.jpg"
@@ -193,8 +200,9 @@
 
             <h6>2-7. 気象データ表示板の拡張</h6>
             <p class="indent small">気象データの観測時刻を右側のコロン付き4桁7セグLED(VT16K33モジュール組込み済み)に出力</p>
-            <figure class="figure">
-                <figcaption class="figure-caption text-center">VK16K33モジュールに組み込まれたコロン付き4桁7セグLED(右側)</figcaption>
+            <figure class="figure ms-4">
+                <figcaption class="figure-caption text-center">VK16K33モジュールに組み込まれたコロン付き4桁7セグLED(右側)
+                </figcaption>
                 <img class="figure-img img-fluid"
                     src="52_displayWeatherDataBoard/images/displayWeatherSensor/DisplayWeatherSensor_latest.jpg"
                     width="550">
@@ -207,10 +215,13 @@
                 </a>
                 <ul class="list-group font-small">
                     <li class="list-group-item">bin/lib/<b>ht16k33.py</b>: HT16K33 モジュールの制御クラス</li>
-                    <li class="list-group-item">bin/lib/<b>led4digit7seg.py</b>: 4つの7セグ4桁LEDの出力を制御するクラス</li>
+                    <li class="list-group-item">bin/lib/<b>led4digit7seg.py</b>: 4つの7セグ4桁LEDの出力を制御するクラス
+                    </li>
                     <li class="list-group-item">bin/lib/<b>timeled7seg.py</b>: 時刻の出力を制御するクラス</li>
-                    <li class="list-group-item">bin/pigpio/<b>UDPClientFromWeatherSensor.py</b>: 気象データ表示板の制御プログラム本体</li>
-                    <li class="list-group-item">bin/<b>udpclient_from_weather_sensor.sh</b>: 起動シェルスクリプト</li>
+                    <li class="list-group-item">bin/pigpio/<b>UDPClientFromWeatherSensor.py</b>:
+                        気象データ表示板の制御プログラム本体</li>
+                    <li class="list-group-item">bin/<b>udpclient_from_weather_sensor.sh</b>: 起動シェルスクリプト
+                    </li>
                 </ul>
             </div>
     </div>
