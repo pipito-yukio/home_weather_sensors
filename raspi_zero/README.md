@@ -44,7 +44,7 @@ crw-rw---- 1 root i2c      89,   1 12月 24 14:29 /dev/i2c-1  # i2cキャラク�
 【気象データ表示板と出力制御クラス図】
 
 <div>
-<img src="images/displayWeatherSensor/DisplayWeatherSensor_controlClasses.jpg">
+<img src="images/displayWeatherSensor/WeatherDataDisplay_controlClasses.jpg">
 </div>
 <br/>
 
