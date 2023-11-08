@@ -42,10 +42,6 @@ Try --help option
 END
 }
 
-query() {
-   sqlite3 -cmd 'PRAGMA foreign_key=ON' "$PATH_WEATHER_DB" "$@"
-}
-
 next_to_date() {
     retval=$(date -d "$1 1 days" +'%F');
     echo "$retval"
@@ -58,7 +54,7 @@ suffix_datetime() {
 }
 
 get_device_csv() {
-cat<<-EOF | query -csv
+cat<<-EOF | sqlite3 "$PATH_WEATHER_DB" -csv
     SELECT * FROM t_device ORDER BY id;
 EOF
 }
@@ -68,7 +64,7 @@ get_csv() {
     where="$2";
     # echo "dev_name: ${dev_name}"
     # echo "where: ${where}"
-cat<<-EOF | query -csv
+cat<<-EOF | sqlite3 "$PATH_WEATHER_DB" -csv
     SELECT
       did,
       datetime(measurement_time, 'unixepoch', 'localtime'), 
