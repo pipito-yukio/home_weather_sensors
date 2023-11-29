@@ -36,8 +36,10 @@ echo $my_passwd | { sudo --stdin cp ~/work/etc/default/switch-to-poweroff /etc/d
   sudo cp ~/work/etc/default/udp-weather-mon /etc/default
   sudo cp ~/work/etc/systemd/system/switch-to-poweroff.service /etc/systemd/system
   sudo cp ~/work/etc/systemd/system/udp-weather-mon.service /etc/systemd/system
+  sudo cp ~/work/etc/systemd/system/button_start.service /etc/systemd/system
   sudo systemctl enable udp-weather-mon.service
   sudo systemctl enable switch-to-poweroff.service
+  sudo systemctl enable button_start.service
 }
 
 echo "Done."
