@@ -77,6 +77,6 @@ def _analog_read_3208(r_data):
     return (r_data[1] & 0x0f) << 8 | r_data[2]
 
 
-RESOLUTION = {ADC.MCP3002: 1023, ADC.MCP3208: 4095}  # resolution-1: 0v
+RESOLUTION = {ADC.MCP3002: 1024, ADC.MCP3208: 4096}
 CMD_FUNC = {ADC.MCP3002: _create_cmd_3002, ADC.MCP3208: _create_cmd_3208}
 READ_FUNC = {ADC.MCP3002: _analog_read_3002, ADC.MCP3208: _analog_read_3208}

@@ -32,5 +32,5 @@ uint16_t SimpleMCP3002::analogRead(uint8_t ch) {
 }
 
 float SimpleMCP3002::getVolt(uint16_t adcVal) {
-    return adcVal * mVRef / (RESOLUTION - 1);
+    return adcVal * mVRef / RESOLUTION;
 }
