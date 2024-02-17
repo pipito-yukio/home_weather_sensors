@@ -55,12 +55,13 @@ void debugSerialOut(ReadData (&datas)[ADC_SAMPLES]) {
     Serial.print(chrbuf);
     Serial.print(",0x");
     sprintf(chrbuf, "%x", rd.lowByte);
+    Serial.print(chrbuf);
     Serial.print("]");
     if (i < ADC_SAMPLES) {
       Serial.print(",");
     }
   }
-  Serial.print("]");
+  Serial.println("]");
 }
 
 float getSamplingAdcValue(uint8_t ch, SimpleMCP3002 &mcp) {
@@ -91,7 +92,7 @@ float getSamplingAdcValue(uint8_t ch, SimpleMCP3002 &mcp) {
   uint16_t meanAdc = round(1.0 * adcTotal / ADC_SAMPLES);
   Serial.println(meanAdc);
 #if defined(DEBUG)
-  debugSerialOut(datas)
+  debugSerialOut(datas);
 #endif
   return meanAdc;
 }
