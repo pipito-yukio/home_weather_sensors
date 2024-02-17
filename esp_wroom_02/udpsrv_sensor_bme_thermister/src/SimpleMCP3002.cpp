@@ -4,7 +4,7 @@
 SimpleMCP3002::SimpleMCP3002(float vRef) :
     mCsPin(PIN_SPI_SS),
     mVRef(vRef),
-    mSettings(SPISettings(1000000, MSBFIRST, SPI_MODE0)/*Clock Frequency: 100kHz */) {
+    mSettings(SPISettings(100000, MSBFIRST, SPI_MODE0)/*Clock Frequency: 1MHz */) {
 }
 
 void SimpleMCP3002::begin(void) {
