@@ -25,14 +25,15 @@ const uint16_t PORT = 2222;
 // MCP3002: channel=0,1
 const uint8_t ADC_SAMPLES = 10;
 const uint8_t CHANNEL_THERM = 0;
+const float ADC_VREF = 3.3;
 // Thermister section
 const float THERM_B = 3435.0;
 const float THERM_R0 = 10000.0;
 const float THERM_R1 = 10000.0; // Divide register 10k
-const float THERM_VREF = 3.3;
+const float THERM_V = 3.3;
 const float THERM_READ_INVALID = -9999.0;
 
-SimpleMCP3002 adc(THERM_VREF);
+SimpleMCP3002 adc(ADC_VREF);
 Adafruit_BME280 bme;
 
 /*
@@ -109,7 +110,7 @@ float getThermTemp() {
     return THERM_READ_INVALID;
   }
 
-  rx = THERM_R1 * ((THERM_VREF - outVolt) / outVolt);
+  rx = THERM_R1 * ((THERM_V - outVolt) / outVolt);
   xa = log(rx / THERM_R0) / THERM_B;
   temp = (1 / (xa + 0.00336)) - 273;
   Serial.print("rx: ");
