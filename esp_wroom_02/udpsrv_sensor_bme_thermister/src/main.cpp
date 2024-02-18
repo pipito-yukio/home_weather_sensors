@@ -111,7 +111,7 @@ float getThermTemp() {
 
   rx = THERM_R1 * ((THERM_VREF - outVolt) / outVolt);
   xa = log(rx / THERM_R0) / THERM_B;
-  temp = (1 / (xa + 0.00335)) - 273.15;
+  temp = (1 / (xa + 0.00336)) - 273;
   Serial.print("rx: ");
   Serial.print(rx);
   Serial.print(", xa: ");
