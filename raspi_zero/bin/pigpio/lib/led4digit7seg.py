@@ -5,6 +5,9 @@ from .ht16k33 import HT16K33, BUS_NUM
 """
 LEDドライバモジュール(HT16K33)を使った4桁7セグメントLED表示ライブラリ for pigpio
 最大4個まで出力
+[出力仕様]
+(1) 整数値: -999 〜 9999
+(2) 実数値: -99.9 〜 999.9 ※小数点第1位
 [部品]
  4桁7セグLED x 1〜4個
  16x8マトリクスLEDドライバモジュール(HT16K33) x 1個
@@ -175,14 +178,18 @@ class LED4digit7Seg(HT16K33):
         self.logger = logger
         self.debug_once = logger is not None and (logger.getEffectiveLevel() <= logging.DEBUG)
 
-    def _make_int_datas(self, digits):
+    def _make_int_datas(self, digits, has_minus=False):
         # カソードコモンLED用
         datas = [0] * DIGIT
         # 数値列(入力値の逆順で4桁目が先頭)を送信データの4桁目から格納する
-        elem = DIGIT - 1
+        elem = DIGIT
         for i in range(len(digits)):
-            datas[elem] = self.SEG_CHAR[digits[i]]
             elem -= 1
+            datas[elem] = self.SEG_CHAR[digits[i]]
+        # 整数値がマイナスの場合は先頭側にマイナスの16進数表現を追加
+        if has_minus:
+            elem -= 1
+            datas[elem] = self.SEG_MINUS
         return datas
 
     def _convert_anode(self, cathode_datas):
@@ -201,10 +208,19 @@ class LED4digit7Seg(HT16K33):
         return datas
 
     def _generate_int_datas(self, number):
+        is_minus = False
+        if number >= 0:
+            val = number
+        else:
+            # マイナスなら絶対値にしてマイナスフラグをTrueに設定
+            val = abs(number)
+            is_minus = True
+        # 数値を数字の逆順配列に変換する
         digits = _make_digits(number)
         if self.debug_once:
             self.logger.debug("number: {} -> digits: {}".format(number, digits))
-        datas = self._make_int_datas(digits)
+        # ドライバーモジュールのメモリ形式に変換
+        datas = self._make_int_datas(digits, has_minus=is_minus)
         if self.debug_once:
             self.logger.debug("datas: {}".format(datas))
         if self.common == LEDCommon.ANODE:
