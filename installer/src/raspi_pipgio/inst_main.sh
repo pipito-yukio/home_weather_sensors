@@ -26,7 +26,10 @@ echo "Database file: $PATH_WEATHER_DB"
 sqlite3 $PATH_WEATHER_DB < ~/db/weather_db.sql
 
 # cron: remove application logs every days
-echo $my_passwd | sudo --stdin cp ~/work/crontab/pi /var/spool/cron/crontabs/
+echo $my_passwd | { sudo --stdin cp ~/work/crontab/$USER /var/spool/cron/crontabs/
+  sudo chown $USER:crontab /var/spool/cron/crontabs/$USER
+  sudo chmod 600 /var/spool/cron/crontabs/$USER
+}
 
 # Enable pigpiod.service
 echo $my_passwd | sudo --stdin systemctl enable pigpiod.service
